@@ -351,14 +351,21 @@ app.get('/api/reservations', authenticateToken, async (req, res) => {
 
 // Rota para buscar todos os hóspedes
 app.get('/api/guests', authenticateToken, async (req, res) => {
-    const { role, apartment } = req.user;
+    const { role, apartment, username } = req.user;
     let query = {};
     if (role === 'owner') {
-        // Proprietários só podem ver hóspedes que já tiveram reservas em seu apartamento.
-        // Isso permite que eles reutilizem cadastros sem ver a lista completa do sistema.
+        // Proprietários podem ver:
+        // 1. Hóspedes que eles mesmos cadastraram (createdBy)
+        // 2. Hóspedes que já tiveram reservas em seu apartamento
         const myReservations = await db.collection('reservations').find({ apartment: apartment }).toArray();
         const myGuestIds = myReservations.map(r => r.guestId).filter(id => id && id !== 'TASK');
-        query = { id: { $in: myGuestIds } };
+        
+        query = {
+            $or: [
+                { id: { $in: myGuestIds } },
+                { createdBy: username }
+            ]
+        };
     }
     const guests = await db.collection('guests').find(query).toArray();
     res.json(guests);
@@ -504,11 +511,13 @@ app.post('/api/guests', authenticateToken, authorize(['admin', 'staff', 'owner']
 
             await db.collection('guests').updateOne(filter, update, options);
             finalGuestData = dataToUpdate;
-        } else {
             // Se não tem ID, é um novo hóspede. Gera um novo ID.
-            // Deixa o MongoDB gerar o _id único.
             guestData.id = new ObjectId().toHexString();
             guestData.createdAt = new Date(); // Adiciona a data de criação
+            guestData.createdBy = req.user.username; // Rastreia quem criou
+            if (req.user.role === 'owner') {
+                guestData.apartment = req.user.apartment; // Vincula ao apartamento do proprietário
+            }
             const insertResult = await db.collection('guests').insertOne(guestData);
             // Busca o documento recém-criado para retornar o objeto completo.
             finalGuestData = await db.collection('guests').findOne({ _id: insertResult.insertedId });
