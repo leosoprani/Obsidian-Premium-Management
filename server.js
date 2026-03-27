@@ -511,6 +511,7 @@ app.post('/api/guests', authenticateToken, authorize(['admin', 'staff', 'owner']
 
             await db.collection('guests').updateOne(filter, update, options);
             finalGuestData = dataToUpdate;
+        } else {
             // Se não tem ID, é um novo hóspede. Gera um novo ID.
             guestData.id = new ObjectId().toHexString();
             guestData.createdAt = new Date(); // Adiciona a data de criação
