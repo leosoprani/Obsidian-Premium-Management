@@ -84,8 +84,6 @@ const logActivity = (action) => (req, res, next) => {
                 username: req.user.username,
                 action: action,
                 timestamp: new Date(),
-            }).then(() => { // Emite o evento WebSocket com os dados enriquecidos
-                req.app.get('io').emit('data_updated', eventData);
             }).catch(err => {
                 console.error('Falha ao registrar log de atividade:', err);
             });
@@ -114,7 +112,8 @@ app.post('/api/auth/login', async (req, res) => {
         return res.status(400).json({ message: 'Senha inválida' });
     }
 
-    const payload = { username: user.username, role: user.role, apartment: user.apartment };
+    const apartment = user.apartment ? user.apartment.trim() : null; // Limpa o apartamento no token
+    const payload = { username: user.username, role: user.role, apartment: apartment };
     const accessToken = jwt.sign(payload, JWT_SECRET, { expiresIn: '8h' });
     res.json({ accessToken });
 });
@@ -172,8 +171,13 @@ app.post('/api/users', authenticateToken, authorize('admin'), async (req, res) =
         }
 
         const hashedPassword = await bcrypt.hash(password, 10);
-        const newUserDoc = { username, password: hashedPassword, role, apartment: role === 'owner' ? apartment : null };
+        const apartmentNormalized = apartment ? apartment.trim() : null;
+        const newUserDoc = { username, password: hashedPassword, role, apartment: apartmentNormalized };
         const result = await db.collection('users').insertOne(newUserDoc);
+        
+        // Emite WebSocket AFTER DB update
+        req.app.get('io').emit('data_updated', { action: 'create_user', user: req.user.username });
+
         const newUser = { _id: result.insertedId, username, role, apartment: newUserDoc.apartment };
         res.status(201).json({ message: 'Usuário criado com sucesso', data: newUser });
     } catch (error) {
@@ -196,6 +200,10 @@ app.delete('/api/users/:id', authenticateToken, authorize('admin'), async (req, 
         }
 
         await db.collection('users').deleteOne({ _id: new ObjectId(id) });
+        
+        // Emite WebSocket AFTER DB update
+        req.app.get('io').emit('data_updated', { action: 'delete_user', user: req.user.username });
+
         res.status(200).json({ message: 'Usuário excluído com sucesso' });
     } catch (error) {
         res.status(500).json({ message: 'Erro ao excluir usuário', error: error.message });
@@ -218,6 +226,10 @@ app.put('/api/users/:id', authenticateToken, authorize('admin'), async (req, res
         }
 
         await db.collection('users').updateOne({ _id: new ObjectId(id) }, updateDoc);
+        
+        // Emite WebSocket AFTER DB update
+        req.app.get('io').emit('data_updated', { action: 'update_user', user: req.user.username });
+
         res.status(200).json({ message: 'Usuário atualizado com sucesso' });
     } catch (error) {
         res.status(500).json({ message: 'Erro ao atualizar usuário', error: error.message });
@@ -263,8 +275,9 @@ app.get('/api/properties', authenticateToken, async (req, res) => {
     const { role, apartment } = req.user;
     try {
         let query = {};
-        if (role === 'owner') {
-            query = { name: apartment };
+        if (role === 'owner' && apartment) {
+            // Busca tolerante a espaços e maiúsculas/minúsculas
+            query = { name: new RegExp(`^${apartment.trim()}$`, 'i') };
         }
         const properties = await db.collection('properties').find(query).sort({ name: 1 }).toArray();
         res.json(properties);
@@ -287,6 +300,10 @@ app.post('/api/properties', authenticateToken, authorize('admin'), logActivity('
             return res.status(400).json({ message: 'Esta propriedade já existe.' });
         }
         const result = await db.collection('properties').insertOne({ name, capacity: req.body.capacity || 0, amenities: req.body.amenities || {} });
+        
+        // Emite WebSocket AFTER DB update
+        req.app.get('io').emit('data_updated', { action: 'create_property', user: req.user.username });
+
         res.status(201).json({ message: 'Propriedade criada com sucesso', data: { _id: result.insertedId, name } });
     } catch (error) {
         res.status(500).json({ message: 'Erro ao criar propriedade', error: error.message });
@@ -297,6 +314,10 @@ app.post('/api/properties', authenticateToken, authorize('admin'), logActivity('
 app.delete('/api/properties/:id', authenticateToken, authorize('admin'), logActivity('delete_property'), async (req, res) => {
     try {
         await db.collection('properties').deleteOne({ _id: new ObjectId(req.params.id) });
+        
+        // Emite WebSocket AFTER DB update
+        req.app.get('io').emit('data_updated', { action: 'delete_property', user: req.user.username });
+
         res.status(200).json({ message: 'Propriedade excluída com sucesso' });
     } catch (error) {
         res.status(500).json({ message: 'Erro ao excluir propriedade', error: error.message });
@@ -317,6 +338,9 @@ app.put('/api/properties/:id', authenticateToken, authorize('admin'), logActivit
         const result = await db.collection('properties').updateOne({ _id: new ObjectId(id) }, updateDoc);
 
         if (result.matchedCount === 0) return res.status(404).json({ message: 'Propriedade não encontrada.' });
+        
+        // Emite WebSocket AFTER DB update
+        req.app.get('io').emit('data_updated', { action: 'update_property', user: req.user.username });
 
         res.status(200).json({ message: 'Propriedade atualizada com sucesso', data: { _id: id, name, capacity, amenities } });
     } catch (error) {
@@ -468,6 +492,10 @@ app.post('/api/reservations', authenticateToken, logActivity('save_reservation')
         }
 
         await db.collection('reservations').updateOne(filter, update, options);
+        
+        // Emite WebSocket AFTER DB update
+        req.app.get('io').emit('data_updated', { action: 'save_reservation', sub_action: dataToUpdate.status === 'pending-approval' ? 'new_approval_request' : null, user: req.user.username });
+
         res.status(200).json({ message: 'Reserva salva com sucesso', data: dataToUpdate });
     } catch (error) {
         console.error('Erro ao salvar reserva:', error);
@@ -483,6 +511,10 @@ app.delete('/api/reservations/:id', authenticateToken, logActivity('delete_reser
         if (result.deletedCount === 0) {
             return res.status(404).json({ message: 'Reserva não encontrada' });
         }
+        
+        // Emite WebSocket AFTER DB update
+        req.app.get('io').emit('data_updated', { action: 'delete_reservation', user: req.user.username });
+
         res.status(200).json({ message: 'Reserva deletada com sucesso' });
     } catch (error) {
         console.error('Erro ao deletar reserva:', error);
@@ -524,6 +556,9 @@ app.post('/api/guests', authenticateToken, authorize(['admin', 'staff', 'owner']
             finalGuestData = await db.collection('guests').findOne({ _id: insertResult.insertedId });
         }
 
+        // Emite WebSocket AFTER DB update
+        req.app.get('io').emit('data_updated', { action: 'save_guest', user: req.user.username });
+
         res.status(200).json({ message: 'Hóspede salvo com sucesso', data: finalGuestData });
     } catch (error) {
         res.status(500).json({ message: 'Erro ao salvar hóspede', error: error.message });
@@ -551,10 +586,11 @@ app.post('/api/employees', authenticateToken, logActivity('save_employee'), asyn
 app.delete('/api/employees/:id', authenticateToken, logActivity('delete_employee'), async (req, res) => { // logActivity estava aqui
     try {
         const { id } = req.params;
-        const result = await db.collection('employees').deleteOne({ id: id });
-        if (result.deletedCount === 0) {
-            return res.status(404).json({ message: 'Funcionário não encontrado' });
-        }
+        await db.collection('employees').deleteOne({ id: id });
+        
+        // Emite WebSocket AFTER DB update
+        req.app.get('io').emit('data_updated', { action: 'delete_employee', user: req.user.username });
+
         res.status(200).json({ message: 'Funcionário deletado com sucesso' });
     } catch (error) {
         console.error('Erro ao deletar funcionário:', error);
@@ -573,8 +609,10 @@ app.delete('/api/guests/:id', authenticateToken, logActivity('delete_guest'), as
             return res.status(404).json({ message: 'Hóspede não encontrado' });
         }
 
-        // Deleta todas as reservas associadas a esse hóspede
         await db.collection('reservations').deleteMany({ guestId: id });
+
+        // Emite WebSocket AFTER DB update
+        req.app.get('io').emit('data_updated', { action: 'delete_guest', user: req.user.username });
 
         res.status(200).json({ message: 'Hóspede e suas reservas foram deletados com sucesso' });
     } catch (error) {
@@ -611,6 +649,10 @@ app.delete('/api/expenses/:id', authenticateToken, authorize('admin'), logActivi
         const { id } = req.params;
         const result = await db.collection('expenses').deleteOne({ id: id });
         if (result.deletedCount === 0) return res.status(404).json({ message: 'Despesa não encontrada' });
+        
+        // Emite WebSocket AFTER DB update
+        req.app.get('io').emit('data_updated', { action: 'delete_expense', user: req.user.username });
+
         res.status(200).json({ message: 'Despesa deletada com sucesso' });
     } catch (error) {
         console.error('Erro ao deletar despesa:', error);
