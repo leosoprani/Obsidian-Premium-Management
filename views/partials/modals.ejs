@@ -1,0 +1,546 @@
+<!-- ====================================================== -->
+<!-- MODAIS - Partial isolado para facilitar manutenção     -->
+<!-- ====================================================== -->
+
+<!-- Input de arquivo para importação -->
+<input type="file" id="import-file-input" class="hidden" accept=".json">
+
+<!-- Modal de Reserva -->
+<div id="reservation-modal"
+    class="fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center hidden z-50 p-4">
+    <div class="card p-4 sm:p-8 w-full max-w-4xl m-0 sm:m-4 transform transition-all opacity-0 -translate-y-4 max-h-[90vh] overflow-y-auto">
+        <div class="flex justify-between items-center mb-6">
+            <h3 id="modal-title" class="text-2xl font-bold text-on-surface">Nova Reserva</h3>
+            <button id="close-modal-btn" class="btn btn-ghost p-2 rounded-full w-9 h-9"><i data-lucide="x"></i></button>
+        </div>
+        <form id="reservation-form">
+            <input type="hidden" id="reservation-id">
+            <div class="grid grid-cols-1 lg:grid-cols-2 lg:gap-x-8">
+                <!-- Coluna da Esquerda -->
+                <div class="space-y-4">
+                    <div>
+                        <label for="guest-select" class="block text-sm font-medium text-on-surface-variant mb-1">Hóspede Principal</label>
+                        <div class="flex items-center gap-2">
+                            <select id="guest-select" class="w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 bg-surface-container-high" required></select>
+                            <button type="button" id="add-new-guest-from-reservation-btn" class="btn btn-secondary p-2 h-10 w-10 flex-shrink-0" title="Adicionar Novo Hóspede"><i data-lucide="user-plus"></i></button>
+                        </div>
+                    </div>
+                    <div>
+                        <label for="apartment-select" class="block text-sm font-medium text-on-surface-variant mb-1">Apartamento</label>
+                        <select id="apartment-select" class="w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 bg-surface-container-high" required></select>
+                    </div>
+                    <div class="grid grid-cols-2 gap-4">
+                        <div>
+                            <label for="checkin-date" class="block text-sm font-medium text-on-surface-variant mb-1">Check-in</label>
+                            <input type="date" id="checkin-date" class="w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 bg-surface-container-high" required>
+                        </div>
+                        <div>
+                            <label for="checkout-date" class="block text-sm font-medium text-on-surface-variant mb-1">Check-out</label>
+                            <input type="date" id="checkout-date" class="w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 bg-surface-container-high" required>
+                        </div>
+                    </div>
+                    <div class="grid grid-cols-2 gap-4">
+                        <div>
+                            <label for="checkin-time" class="block text-sm font-medium text-on-surface-variant mb-1">Hora Entrada</label>
+                            <input type="time" id="checkin-time" class="w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 bg-surface-container-high">
+                        </div>
+                        <div>
+                            <label for="checkout-time" class="block text-sm font-medium text-on-surface-variant mb-1">Hora Saída</label>
+                            <input type="time" id="checkout-time" class="w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 bg-surface-container-high">
+                        </div>
+                    </div>
+                    <div class="grid grid-cols-3 gap-4 border-t pt-4">
+                        <div>
+                            <label for="adults-count" class="block text-sm font-medium text-on-surface-variant mb-1">Adultos</label>
+                            <input type="number" id="adults-count" min="1" value="1" class="w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 bg-surface-container-high">
+                        </div>
+                        <div>
+                            <label for="children-count" class="block text-sm font-medium text-on-surface-variant mb-1">Crianças</label>
+                            <input type="number" id="children-count" min="0" value="0" class="w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 bg-surface-container-high">
+                        </div>
+                        <div class="flex flex-col items-start justify-center pt-5">
+                            <label for="pet-included" class="flex items-center gap-2 text-sm font-medium text-on-surface-variant">
+                                <input type="checkbox" id="pet-included" class="h-4 w-4 rounded border-outline-variant/30 text-blue-600 focus:ring-blue-500"> Pet
+                            </label>
+                        </div>
+                    </div>
+                    <div id="additional-guests-section" class="hidden space-y-2 border-t pt-4">
+                        <label class="block text-sm font-medium text-on-surface-variant">Hóspedes Adicionais</label>
+                        <div id="additional-guests-list" class="space-y-2"></div>
+                    </div>
+                </div>
+                <!-- Coluna da Direita -->
+                <div class="space-y-4">
+                    <div class="space-y-2 lg:border-t-0 pt-0">
+                        <label class="block text-sm font-medium text-on-surface-variant">Veículo <span class="text-xs text-gray-400 font-normal ml-1">(Opcional)</span></label>
+                        <div class="grid grid-cols-2 gap-4">
+                            <input type="text" id="vehicle-model" placeholder="Modelo" class="w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 bg-surface-container-high">
+                            <input type="text" id="vehicle-type" placeholder="Tipo (Carro, Moto)" class="w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 bg-surface-container-high">
+                            <input type="text" id="vehicle-plate" placeholder="Matrícula" class="w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 bg-surface-container-high">
+                            <input type="text" id="vehicle-color" placeholder="Cor" class="w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 bg-surface-container-high">
+                        </div>
+                    </div>
+                    <div>
+                        <label for="reservation-notes" class="block text-sm font-medium text-on-surface-variant mb-1">Observações</label>
+                        <textarea id="reservation-notes" rows="2" placeholder="Ex: Pedido especial do hóspede..." class="w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 bg-surface-container-high"></textarea>
+                    </div>
+                    <div>
+                        <label for="status-select" class="block text-sm font-medium text-on-surface-variant mb-1">Status</label>
+                        <select id="status-select" class="w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 bg-surface-container-high" required>
+                            <option value="pending-approval">Aguardando Aprovação</option>
+                            <option value="pending">Pendente</option>
+                            <option value="confirmed">Confirmada</option>
+                            <option value="checked-in">Check-in</option>
+                            <option value="canceled">Cancelada</option>
+                            <option value="finished">Finalizada</option>
+                            <option value="maintenance">Manutenção</option>
+                            <option value="blocked">Bloqueado</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label for="platform-select" class="block text-sm font-medium text-on-surface-variant mb-1">Plataforma de Origem</label>
+                        <select id="platform-select" class="w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 bg-surface-container-high">
+                            <option value="direct">Direto / Telefone</option>
+                            <option value="airbnb">Airbnb</option>
+                            <option value="booking">Booking.com</option>
+                            <option value="owner">Uso do Proprietário</option>
+                            <option value="other">Outra</option>
+                        </select>
+                    </div>
+                    <div class="grid grid-cols-2 gap-4 border-t pt-4">
+                        <div>
+                            <label for="reservation-price" class="block text-sm font-medium text-on-surface-variant mb-1">Valor (R$)</label>
+                            <input type="number" id="reservation-price" step="0.01" min="0" placeholder="Ex: 450.50" class="w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 bg-surface-container-high">
+                        </div>
+                        <div>
+                            <label for="payment-status-select" class="block text-sm font-medium text-on-surface-variant mb-1">Pagamento</label>
+                            <select id="payment-status-select" class="w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 bg-surface-container-high">
+                                <option value="pending">Pendente</option>
+                                <option value="partial">Parcial</option>
+                                <option value="paid">Pago</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="flex justify-between items-center mt-8">
+                <div class="flex gap-2">
+                    <button type="button" id="cancel-reservation-btn" class="btn hidden" style="background-color: var(--brand-yellow); color: white;"><i data-lucide="ban"></i> Cancelar Reserva</button>
+                    <button type="button" id="delete-reservation-btn" class="btn btn-danger hidden"><i data-lucide="trash-2"></i> Excluir</button>
+                </div>
+                <div class="flex gap-2">
+                    <button type="button" id="cancel-btn" class="btn btn-secondary"><i data-lucide="x-circle" class="w-4 h-4"></i> Cancelar</button>
+                    <button type="submit" class="btn btn-primary"><i data-lucide="save" class="w-4 h-4"></i> Salvar</button>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Modal de Hóspede -->
+<div id="guest-modal" class="fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center hidden z-50 p-4">
+    <div class="card p-8 w-full max-w-md m-4 transform transition-all opacity-0 -translate-y-4">
+        <div class="flex justify-between items-center mb-6">
+            <h3 id="guest-modal-title" class="text-2xl font-bold text-on-surface">Novo Hóspede</h3>
+            <button id="close-guest-modal-btn" class="btn btn-ghost p-2 rounded-full w-9 h-9"><i data-lucide="x"></i></button>
+        </div>
+        <form id="guest-form">
+            <input type="hidden" id="guest-id">
+            <div class="space-y-4">
+                <div class="flex flex-col items-center space-y-2">
+                    <img id="guest-photo-preview" src="https://placehold.co/128" alt="Foto do Hóspede" class="w-24 h-24 rounded-full object-cover border-4 border-outline-variant/20">
+                    <input type="file" id="guest-photo-upload" class="hidden" accept="image/*">
+                    <button type="button" id="guest-photo-upload-btn" class="btn btn-secondary text-sm !py-1 !px-3">Trocar Foto</button>
+                </div>
+                <div>
+                    <label for="guest-name" class="block text-sm font-medium text-on-surface-variant mb-1">Nome Completo</label>
+                    <div class="relative">
+                        <input type="text" id="guest-name" class="w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 bg-surface-container-high" required autocomplete="off">
+                        <div id="guest-suggestions-list" class="absolute z-20 w-full bg-surface-container border border-outline-variant/30 rounded-md mt-1 hidden max-h-40 overflow-y-auto shadow-lg"></div>
+                    </div>
+                    <p id="existing-guest-info" class="text-sm text-green-600 mt-1 hidden">Dados de hóspede existente carregados. Salvar irá atualizar o cadastro.</p>
+                </div>
+                <div>
+                    <label for="guest-phone" class="block text-sm font-medium text-on-surface-variant mb-1">Telefone</label>
+                    <input type="tel" id="guest-phone" required class="w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 bg-surface-container-high">
+                </div>
+                <div>
+                    <label for="guest-email" class="block text-sm font-medium text-on-surface-variant mb-1">E-mail</label>
+                    <input type="email" id="guest-email" class="w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 bg-surface-container-high">
+                </div>
+                <div>
+                    <label for="guest-doc" class="block text-sm font-medium text-on-surface-variant mb-1">Documento (CPF/Passaporte)</label>
+                    <input type="text" id="guest-doc" required class="w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 bg-surface-container-high">
+                </div>
+                <div>
+                    <label for="guest-notes" class="block text-sm font-medium text-on-surface-variant mb-1">Observações</label>
+                    <textarea id="guest-notes" class="w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 bg-surface-container-high" rows="3"></textarea>
+                </div>
+            </div>
+            <div class="flex justify-end items-center mt-8">
+                <div class="flex gap-2">
+                    <button type="button" id="cancel-guest-btn" class="btn btn-secondary"><i data-lucide="x-circle" class="w-4 h-4"></i> Cancelar</button>
+                    <button type="submit" class="btn btn-primary"><i data-lucide="save" class="w-4 h-4"></i> Salvar Hóspede</button>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Modal de Funcionário -->
+<div id="employee-modal" class="fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center hidden z-50 p-4">
+    <div class="card p-8 w-full max-w-md m-4 transform transition-all opacity-0 -translate-y-4">
+        <div class="flex justify-between items-center mb-6">
+            <h3 id="employee-modal-title" class="text-2xl font-bold text-on-surface">Novo Funcionário</h3>
+            <button id="close-employee-modal-btn" class="btn btn-ghost p-2 rounded-full w-9 h-9"><i data-lucide="x"></i></button>
+        </div>
+        <form id="employee-form">
+            <input type="hidden" id="employee-id">
+            <div class="space-y-4">
+                <div>
+                    <label for="employee-name" class="block text-sm font-medium text-on-surface-variant mb-1">Nome Completo</label>
+                    <input type="text" id="employee-name" class="w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 bg-surface-container-high" required>
+                </div>
+                <div>
+                    <label for="employee-role" class="block text-sm font-medium text-on-surface-variant mb-1">Cargo</label>
+                    <input type="text" id="employee-role" placeholder="Ex: Gerente, Limpeza" class="w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 bg-surface-container-high" required>
+                </div>
+                <div>
+                    <label for="employee-phone" class="block text-sm font-medium text-on-surface-variant mb-1">Telefone</label>
+                    <input type="tel" id="employee-phone" class="w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 bg-surface-container-high" required>
+                </div>
+                <div>
+                    <label for="employee-doc" class="block text-sm font-medium text-on-surface-variant mb-1">Documento (CPF)</label>
+                    <input type="text" id="employee-doc" class="w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 bg-surface-container-high" required>
+                </div>
+            </div>
+            <div class="flex justify-end items-center mt-8">
+                <div class="flex gap-2">
+                    <button type="button" id="cancel-employee-btn" class="btn btn-secondary"><i data-lucide="x-circle" class="w-4 h-4"></i> Cancelar</button>
+                    <button type="submit" class="btn btn-primary"><i data-lucide="save" class="w-4 h-4"></i> Salvar</button>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Modal de Detalhes do Apartamento -->
+<div id="apartment-details-modal" class="fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center hidden z-50 p-4">
+    <div class="card p-8 w-full max-w-2xl m-4 transform transition-all opacity-0 -translate-y-4 max-h-[90vh] overflow-y-auto hide-scrollbar">
+        <div class="flex justify-between items-center mb-6">
+            <h3 id="apartment-details-title" class="text-2xl font-bold text-on-surface">Detalhes de Ocupação</h3>
+            <button id="close-apartment-details-modal-btn" class="btn btn-ghost p-2 rounded-full w-9 h-9"><i data-lucide="x"></i></button>
+        </div>
+        <div class="border-b border-outline-variant/20 mb-4">
+            <nav class="-mb-px flex space-x-4">
+                <button id="tab-reservations" class="tab-button tab-reservations active"><i data-lucide="calendar-days" class="w-4 h-4"></i><span>Histórico de Reservas</span></button>
+                <button id="tab-tasks" class="tab-button tab-tasks"><i data-lucide="clipboard-list" class="w-4 h-4"></i><span>Histórico de Tarefas</span></button>
+            </nav>
+        </div>
+        <div id="apartment-details-reservations-content" class="tab-content"></div>
+        <div id="apartment-details-tasks-content" class="tab-content hidden"></div>
+    </div>
+</div>
+
+<!-- Modal de Configurações -->
+<div id="settings-modal" class="fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center hidden z-50 p-4">
+    <div class="card p-8 w-full max-w-md m-4 transform transition-all opacity-0 -translate-y-4">
+        <div class="flex justify-between items-center mb-6">
+            <h3 class="text-2xl font-bold text-on-surface">Configurações</h3>
+            <button id="close-settings-modal-btn" class="btn btn-ghost p-2 rounded-full w-9 h-9"><i data-lucide="x"></i></button>
+        </div>
+        <div class="space-y-4">
+            <h4 class="text-lg font-semibold text-on-surface">Gerenciamento de Dados</h4>
+            <p class="text-sm text-outline">Exporte todos os seus dados para um arquivo de backup ou importe um backup para restaurar suas informações.</p>
+            <div class="flex flex-col sm:flex-row gap-3 pt-2">
+                <button id="export-data-btn" class="btn btn-secondary w-full"><i data-lucide="download"></i> Exportar Dados</button>
+                <button id="import-data-btn" class="btn btn-secondary w-full"><i data-lucide="upload"></i> Importar Dados</button>
+            </div>
+            <div class="border-t my-6"></div>
+            <h4 class="text-lg font-semibold text-on-surface">Recuperação de Emergência</h4>
+            <p class="text-sm text-outline">Restaure a versão mais recente dos seus dados salva automaticamente pelo sistema.</p>
+            <div class="pt-2">
+                <button id="restore-auto-backup-btn" class="btn btn-danger w-full"><i data-lucide="history"></i> Restaurar Último Backup</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal de Tarefas (Limpeza, Manutenção, Bloqueio) -->
+<div id="task-modal" class="fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center hidden z-50 p-4">
+    <div class="card p-8 w-full max-w-md m-4 transform transition-all opacity-0 -translate-y-4">
+        <div class="flex justify-between items-center mb-6">
+            <h3 id="task-modal-title" class="text-2xl font-bold text-on-surface">Nova Tarefa</h3>
+            <button id="close-task-modal-btn" class="btn btn-ghost p-2 rounded-full w-9 h-9"><i data-lucide="x"></i></button>
+        </div>
+        <form id="task-form">
+            <input type="hidden" id="task-id">
+            <input type="hidden" id="task-type">
+            <div class="space-y-4">
+                <div>
+                    <label for="task-apartment-select" class="block text-sm font-medium text-on-surface-variant mb-1">Apartamento</label>
+                    <select id="task-apartment-select" class="w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 bg-surface-container-high" required></select>
+                </div>
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <label for="task-start-date" class="block text-sm font-medium text-on-surface-variant mb-1">Data Início</label>
+                        <input type="date" id="task-start-date" class="w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 bg-surface-container-high" required>
+                    </div>
+                    <div>
+                        <label for="task-end-date" class="block text-sm font-medium text-on-surface-variant mb-1">Data Fim</label>
+                        <input type="date" id="task-end-date" class="w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 bg-surface-container-high" required>
+                    </div>
+                </div>
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <label for="task-start-time" class="block text-sm font-medium text-on-surface-variant mb-1">Hora Início</label>
+                        <input type="time" id="task-start-time" class="w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 bg-surface-container-high">
+                    </div>
+                    <div>
+                        <label for="task-end-time" class="block text-sm font-medium text-on-surface-variant mb-1">Hora Fim</label>
+                        <input type="time" id="task-end-time" class="w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 bg-surface-container-high">
+                    </div>
+                </div>
+                <div id="maintenance-fields" class="hidden space-y-4 border-t pt-4">
+                    <input type="text" id="task-service-type" placeholder="Tipo de Serviço (Ex: Reparo ar-condicionado)" class="w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 bg-surface-container-high">
+                    <input type="text" id="task-company" placeholder="Empresa/Responsável (Ex: EletroFrio)" class="w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 bg-surface-container-high">
+                </div>
+                <div id="cleaning-fields" class="hidden space-y-4 border-t pt-4">
+                    <input type="text" id="task-provider" placeholder="Nome do Prestador (Opcional)" class="w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 bg-surface-container-high">
+                </div>
+                <div id="blocking-fields" class="hidden space-y-4 border-t pt-4">
+                    <textarea id="task-reason" rows="2" placeholder="Motivo do Bloqueio (Ex: Reforma do banheiro)" class="w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 bg-surface-container-high"></textarea>
+                </div>
+            </div>
+            <div class="flex justify-end items-center mt-8">
+                <div class="flex gap-2">
+                    <button type="button" id="cancel-task-btn" class="btn btn-secondary"><i data-lucide="x-circle" class="w-4 h-4"></i> Cancelar</button>
+                    <button type="submit" class="btn btn-primary"><i data-lucide="save" class="w-4 h-4"></i> Salvar Tarefa</button>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Modal de Despesa -->
+<div id="expense-modal" class="fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center hidden z-50 p-4">
+    <div class="card p-8 w-full max-w-md m-4 transform transition-all opacity-0 -translate-y-4">
+        <div class="flex justify-between items-center mb-6">
+            <h3 id="expense-modal-title" class="text-2xl font-bold text-on-surface">Nova Despesa</h3>
+            <button id="close-expense-modal-btn" class="btn btn-ghost p-2 rounded-full w-9 h-9"><i data-lucide="x"></i></button>
+        </div>
+        <form id="expense-form">
+            <input type="hidden" id="expense-id">
+            <div class="space-y-4">
+                <div>
+                    <label for="expense-description" class="block text-sm font-medium text-on-surface-variant mb-1">Descrição</label>
+                    <input type="text" id="expense-description" class="w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 bg-surface-container-high" required>
+                </div>
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <label for="expense-amount" class="block text-sm font-medium text-on-surface-variant mb-1">Valor (R$)</label>
+                        <input type="number" id="expense-amount" step="0.01" min="0" placeholder="Ex: 50.00" class="w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 bg-surface-container-high" required>
+                    </div>
+                    <div>
+                        <label for="expense-date" class="block text-sm font-medium text-on-surface-variant mb-1">Data</label>
+                        <input type="date" id="expense-date" class="w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 bg-surface-container-high" required>
+                    </div>
+                </div>
+                <div>
+                    <label for="expense-category" class="block text-sm font-medium text-on-surface-variant mb-1">Categoria</label>
+                    <input type="text" id="expense-category" placeholder="Ex: Limpeza, Manutenção, Contas" class="w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 bg-surface-container-high">
+                </div>
+            </div>
+            <div class="flex justify-between items-center mt-8">
+                <button type="button" id="delete-expense-btn" class="btn hidden" style="background-color: transparent; color: var(--brand-red); border-color: var(--brand-red);"><i data-lucide="trash-2"></i> Excluir</button>
+                <div class="flex gap-2">
+                    <button type="button" id="cancel-expense-btn" class="btn btn-secondary"><i data-lucide="x-circle" class="w-4 h-4"></i> Cancelar</button>
+                    <button type="submit" class="btn btn-primary"><i data-lucide="save" class="w-4 h-4"></i> Salvar Despesa</button>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Modal de Usuário -->
+<div id="user-modal" class="fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center hidden z-50 p-4">
+    <div class="card p-8 w-full max-w-md m-4 transform transition-all opacity-0 -translate-y-4">
+        <div class="flex justify-between items-center mb-6">
+            <h3 id="user-modal-title" class="text-2xl font-bold text-on-surface">Novo Usuário</h3>
+            <button id="close-user-modal-btn" class="btn btn-ghost p-2 rounded-full w-9 h-9"><i data-lucide="x"></i></button>
+        </div>
+        <form id="user-form">
+            <input type="hidden" id="user-id">
+            <div class="space-y-4">
+                <div>
+                    <label for="user-username" class="block text-sm font-medium text-on-surface-variant mb-1">Nome de Usuário</label>
+                    <input type="text" id="user-username" class="w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 bg-surface-container-high" required>
+                </div>
+                <div>
+                    <label for="user-password" class="block text-sm font-medium text-on-surface-variant mb-1">Senha</label>
+                    <input type="password" id="user-password" autocomplete="new-password" class="w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 bg-surface-container-high" required>
+                </div>
+                <div>
+                    <label for="user-role-select" class="block text-sm font-medium text-on-surface-variant mb-1">Função</label>
+                    <select id="user-role-select" class="w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 bg-surface-container-high" required>
+                        <option value="staff">Padrão (Staff)</option>
+                        <option value="owner">Proprietário (Owner)</option>
+                        <option value="admin">Administrador (Admin)</option>
+                    </select>
+                </div>
+                <div id="user-apartment-field" class="hidden">
+                    <label for="user-apartment-select" class="block text-sm font-medium text-on-surface-variant mb-1">Apartamento do Proprietário</label>
+                    <select id="user-apartment-select" class="w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 bg-surface-container-high"></select>
+                </div>
+            </div>
+            <div class="flex justify-end items-center mt-8"><button type="submit" class="btn btn-primary"><i data-lucide="save" class="w-4 h-4"></i> Salvar Usuário</button></div>
+        </form>
+    </div>
+</div>
+
+<!-- Modal de Edição de Propriedade -->
+<div id="property-edit-modal" class="fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center hidden z-50 p-4">
+    <div class="card p-8 w-full max-w-lg m-4 transform transition-all opacity-0 -translate-y-4">
+        <div class="flex justify-between items-center mb-6">
+            <h3 id="property-edit-modal-title" class="text-2xl font-bold">Editar Propriedade</h3>
+            <button id="close-property-edit-modal-btn" class="btn btn-ghost p-2 rounded-full w-9 h-9"><i data-lucide="x"></i></button>
+        </div>
+        <form id="property-edit-form">
+            <input type="hidden" id="property-edit-id">
+            <div class="space-y-4">
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div>
+                        <label for="property-edit-name" class="block text-sm font-medium text-on-surface-variant mb-1">Nome do Apartamento</label>
+                        <input type="text" id="property-edit-name" class="w-full px-3 py-2 border rounded-md bg-surface-container-high" required>
+                    </div>
+                    <div>
+                        <label for="property-edit-capacity" class="block text-sm font-medium text-on-surface-variant mb-1">Capacidade (Pessoas)</label>
+                        <input type="number" id="property-edit-capacity" min="1" class="w-full px-3 py-2 border rounded-md bg-surface-container-high">
+                    </div>
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-on-surface-variant mb-2">Amenidades</label>
+                    <div id="amenities-toggle-container" class="flex flex-wrap gap-3">
+                        <button type="button" class="amenity-toggle" data-amenity="wifi">Wi-Fi</button>
+                        <button type="button" class="amenity-toggle" data-amenity="tv">TV</button>
+                        <button type="button" class="amenity-toggle" data-amenity="airConditioning">Ar Cond.</button>
+                        <button type="button" class="amenity-toggle" data-amenity="cooktop">Cooktop</button>
+                        <button type="button" class="amenity-toggle" data-amenity="microwave">Micro-ondas</button>
+                        <button type="button" class="amenity-toggle" data-amenity="fireAlarm">Alarme Incêndio</button>
+                    </div>
+                </div>
+            </div>
+            <div class="flex justify-end items-center mt-8">
+                <div class="flex gap-2">
+                    <button type="button" id="cancel-property-edit-btn" class="btn btn-secondary"><i data-lucide="x-circle" class="w-4 h-4"></i> Cancelar</button>
+                    <button type="submit" class="btn btn-primary"><i data-lucide="save" class="w-4 h-4"></i> Salvar Alterações</button>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Modal de Chat -->
+<div id="chat-modal" class="fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center hidden z-50 p-4">
+    <div class="card w-full max-w-lg h-[70vh] flex flex-col transform transition-all opacity-0 -translate-y-4">
+        <div class="p-4 border-b flex justify-between items-center flex-shrink-0 gap-4">
+            <h3 id="chat-modal-title" class="text-lg font-bold">Conversa</h3>
+            <div class="flex items-center">
+                <button id="clear-current-chat-btn" class="btn btn-ghost p-2 rounded-full w-9 h-9 text-red-500 hidden" title="Limpar histórico desta conversa"><i data-lucide="trash-2"></i></button>
+                <button id="close-chat-modal-btn" class="btn btn-ghost p-2 rounded-full w-9 h-9"><i data-lucide="x"></i></button>
+            </div>
+        </div>
+        <div id="chat-messages-container" class="flex-grow p-4 space-y-4 overflow-y-auto"></div>
+        <div class="p-4 border-t flex-shrink-0">
+            <div id="chat-recording-indicator" class="hidden items-center gap-2 text-sm text-red-500 mb-2">
+                <i data-lucide="mic" class="w-4 h-4 animate-pulse"></i>
+                <span>Gravando...</span>
+                <span id="chat-recording-timer">00:00</span>
+            </div>
+            <form id="chat-form" class="flex items-center gap-2">
+                <input type="file" id="chat-file-input" class="hidden" accept="image/*,.pdf,.doc,.docx,audio/*">
+                <input type="hidden" id="chat-partner-username">
+                <button type="button" id="chat-attach-file-btn" class="btn btn-secondary px-3" title="Anexar arquivo"><i data-lucide="paperclip"></i></button>
+                <input type="text" id="chat-message-input" placeholder="Digite sua mensagem..." class="w-full px-3 py-2 border rounded-md bg-surface-container-high" required autocomplete="off">
+                <button type="button" id="chat-record-btn" class="btn btn-secondary px-3" title="Gravar Áudio"><i data-lucide="mic"></i></button>
+                <button type="submit" id="chat-send-btn" class="btn btn-primary px-4" title="Enviar Mensagem"><i data-lucide="send"></i></button>
+            </form>
+            <p id="chat-file-name" class="text-xs text-outline mt-1 truncate"></p>
+        </div>
+    </div>
+</div>
+
+<!-- Modal de Lista de Chats (Admin) -->
+<div id="chat-list-modal" class="fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center hidden z-50 p-4">
+    <div class="card w-full max-w-md h-auto max-h-[70vh] flex flex-col transform transition-all opacity-0 -translate-y-4">
+        <div class="p-3 border-b flex justify-between items-center flex-shrink-0">
+            <h3 class="text-lg font-bold">Conversas</h3>
+            <button id="close-chat-list-modal-btn" class="btn btn-ghost p-2 rounded-full w-9 h-9"><i data-lucide="x"></i></button>
+        </div>
+        <div class="p-2 border-b">
+            <div class="relative">
+                <i data-lucide="search" class="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400"></i>
+                <input type="text" id="chat-list-search" placeholder="Buscar proprietário..." class="w-full pl-10 pr-4 py-2 border rounded-md bg-surface-container-high text-sm">
+            </div>
+        </div>
+        <div id="chat-list-container" class="flex-grow p-2 space-y-1 overflow-y-auto">
+            <p class="p-4 text-center text-outline">Nenhum proprietário encontrado.</p>
+        </div>
+    </div>
+</div>
+
+<!-- Modal de Visualização de Arquivo -->
+<div id="file-viewer-modal" class="fixed inset-0 bg-black bg-opacity-70 flex items-center justify-center hidden z-[60] p-4">
+    <div class="card w-full max-w-4xl h-auto max-h-[90vh] flex flex-col transform transition-all opacity-0 -translate-y-4">
+        <div class="p-3 border-b flex justify-between items-center flex-shrink-0">
+            <h3 id="file-viewer-title" class="text-lg font-bold truncate">Visualizar Arquivo</h3>
+            <div class="flex items-center gap-2">
+                <a id="file-viewer-download-btn" href="#" download class="btn btn-secondary" title="Baixar Arquivo"><i data-lucide="download"></i><span class="hidden sm:inline">Baixar</span></a>
+                <button id="file-viewer-fullscreen-btn" class="btn btn-secondary hidden" title="Tela Cheia"><i data-lucide="maximize"></i></button>
+                <button id="file-viewer-close-btn" class="btn btn-ghost p-2 rounded-full w-9 h-9"><i data-lucide="x"></i></button>
+            </div>
+        </div>
+        <div id="file-viewer-content" class="flex-grow p-4 flex items-center justify-center overflow-auto"></div>
+    </div>
+</div>
+
+<!-- Modal de Alterar Senha -->
+<div id="change-password-modal" class="fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center hidden z-50 p-4">
+    <div class="card p-8 w-full max-w-md m-4 transform transition-all opacity-0 -translate-y-4">
+        <div class="flex justify-between items-center mb-6">
+            <h3 class="text-2xl font-bold">Alterar Senha</h3>
+            <button id="close-change-password-modal-btn" class="btn btn-ghost p-2 rounded-full w-9 h-9"><i data-lucide="x"></i></button>
+        </div>
+        <form id="change-password-form">
+            <div class="space-y-4">
+                <div>
+                    <label for="current-password" class="block text-sm font-medium text-on-surface-variant mb-1">Senha Atual</label>
+                    <input type="password" id="current-password" autocomplete="current-password" class="w-full px-3 py-2 border rounded-md bg-surface-container-high" required>
+                </div>
+                <div>
+                    <label for="new-password" class="block text-sm font-medium text-on-surface-variant mb-1">Nova Senha</label>
+                    <input type="password" id="new-password" autocomplete="new-password" class="w-full px-3 py-2 border rounded-md bg-surface-container-high" required>
+                </div>
+                <div>
+                    <label for="confirm-password" class="block text-sm font-medium text-on-surface-variant mb-1">Confirmar Nova Senha</label>
+                    <input type="password" id="confirm-password" autocomplete="new-password" class="w-full px-3 py-2 border rounded-md bg-surface-container-high" required>
+                </div>
+            </div>
+            <div class="flex justify-end items-center mt-8">
+                <button type="submit" class="btn btn-primary"><i data-lucide="save" class="w-4 h-4"></i> Salvar Nova Senha</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Modal customizado Alert/Confirm -->
+<div id="custom-modal-container" class="fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center hidden z-50 p-4">
+    <div class="card p-6 w-full max-w-sm m-4 text-center">
+        <h3 id="custom-modal-title" class="text-xl font-bold mb-2"></h3>
+        <p id="custom-modal-message" class="text-on-surface-variant mb-6"></p>
+        <div id="custom-modal-buttons" class="flex justify-center gap-4"></div>
+    </div>
+</div>
+
+<!-- Contêiner para Notificações (Toasts) -->
+<div id="toast-container" class="fixed top-6 right-6 z-50 space-y-3 w-80"></div>
