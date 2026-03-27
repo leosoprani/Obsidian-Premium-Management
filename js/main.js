@@ -624,13 +624,7 @@ document.addEventListener('DOMContentLoaded', () => {
             }
 
             // IMPORTANTE: Atualiza o dropdown de apartamentos em modais que possam estar abertos ou para futuros usos
-            const apartmentSelect = document.getElementById('apartment-select');
-            if (apartmentSelect) {
-                const currentVal = apartmentSelect.value;
-                apartmentSelect.innerHTML = '<option value="" disabled selected>Selecione...</option>' + 
-                    window.app.state.properties.map(prop => `<option value="${prop.name}">${prop.name}</option>`).join('');
-                apartmentSelect.value = currentVal;
-            }
+            modals.populateApartmentSelect(window.app.state.properties);
 
         } catch (error) {
             console.error('Erro ao salvar propriedade:', error);

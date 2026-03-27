@@ -97,7 +97,7 @@ function validateField(field) {
     field.classList.add(isValid ? 'is-valid' : 'is-invalid');
 }
 
-function populateApartmentSelect(properties, selectedValue = null) {
+export function populateApartmentSelect(properties, selectedValue = null) {
     const select = document.getElementById('apartment-select');
     if (!properties) return;
     select.innerHTML = '<option value="" disabled selected>Selecione...</option>' + properties.map(prop => `<option value="${prop.name}">${prop.name}</option>`).join('');
