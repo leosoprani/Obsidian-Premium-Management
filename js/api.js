@@ -1,5 +1,4 @@
-const isProduction = window.location.hostname === 'storeyluxor.netlify.app';
-const API_BASE_URL = isProduction ? 'https://storey-luxor-backend.onrender.com/api' : 'http://localhost:3000/api';
+const API_BASE_URL = '/api';
 
 function getAuthHeaders() {
     const token = localStorage.getItem('authToken');

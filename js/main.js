@@ -1173,10 +1173,8 @@ document.addEventListener('DOMContentLoaded', () => {
                 }
                 console.log('Aplicação inicializada e eventos configurados com sucesso.');
 
-                // Conecta ao WebSocket
-                const isProduction = window.location.hostname === 'storeyluxor.netlify.app';
-                const socketUrl = isProduction ? 'https://storey-luxor-backend.onrender.com' : 'http://localhost:3000';
-                const socket = io(socketUrl);
+                // Conecta ao WebSocket no domínio atual
+                const socket = io();
                 socket.on('data_updated', (updateData) => {
                     const currentUser = parseJwt(localStorage.getItem('authToken'))?.username;
 
