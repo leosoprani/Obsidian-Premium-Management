@@ -38,7 +38,7 @@
     <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet"/>
 
     <!-- CSS Compilado (Tailwind + Estilos Obsidian) -->
-    <link rel="stylesheet" href="/css/output.css">
+    <link rel="stylesheet" href="/css/output.css?v=1.0.1">
 </head>
 
 <body class="bg-surface text-on-surface antialiased font-['Inter'] dark">
@@ -83,9 +83,10 @@
                 </div>
                 <div class="hidden sm:flex items-center gap-3 justify-center">
                     <div class="relative">
-                        <button id="owner-chat-btn" class="btn btn-ghost p-2 w-9 h-9"><i data-lucide="message-square"></i></button>
+                        <button id="owner-chat-btn" class="btn btn-ghost p-2 w-9 h-9" title="Mensagens"><i data-lucide="message-square"></i></button>
                         <span id="owner-chat-unread-badge" class="absolute top-0 right-0 h-2.5 w-2.5 rounded-full bg-red-500 border-2 border-surface hidden"></span>
                     </div>
+                    <button id="owner-add-guest-btn" class="btn btn-ghost border border-outline-variant/30 hover:bg-surface-variant/20"><i data-lucide="user-plus"></i><span class="hidden md:inline">Novo Hóspede</span></button>
                     <button id="owner-request-reservation-btn" class="btn btn-primary"><i data-lucide="plus-circle"></i><span class="hidden md:inline">Solicitar Reserva</span></button>
                     <div id="owner-profile-menu" class="relative">
                         <button id="owner-profile-btn" class="btn btn-ghost p-2 w-11 h-11"><i data-lucide="user-circle-2" class="w-7 h-7"></i></button>
@@ -394,10 +395,10 @@
 
     <!-- Scripts -->
     <script src="https://cdn.socket.io/4.7.5/socket.io.min.js"></script>
-    <script type="module" src="/js/pdfGenerator.js"></script>
-    <script type="module" src="/js/chat.js"></script>
-    <script type="module" src="/js/events.js"></script>
-    <script type="module" src="/js/main.js"></script>
+    <script type="module" src="/js/pdfGenerator.js?v=1.0.1"></script>
+    <script type="module" src="/js/chat.js?v=1.0.1"></script>
+    <script type="module" src="/js/events.js?v=1.0.1"></script>
+    <script type="module" src="/js/main.js?v=1.0.1"></script>
 
     <script>
         if ('serviceWorker' in navigator) {

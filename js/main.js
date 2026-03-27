@@ -464,6 +464,9 @@ document.addEventListener('DOMContentLoaded', () => {
             }
             modals.closeGuestModal();
 
+            // Sincroniza o dropdown de hóspedes no modal de reserva se estiver aberto
+            modals.populateGuestSelect(window.app.state.guests, savedGuest.data.id);
+
             // Se houver um callback (definido ao abrir o modal de hóspede a partir de outro modal), execute-o.
             if (typeof window.app.state.onGuestSaveCallback === 'function') {
                 window.app.state.onGuestSaveCallback(savedGuest.data);
@@ -592,6 +595,47 @@ document.addEventListener('DOMContentLoaded', () => {
                 modals.showAlert(`Não foi possível excluir o usuário: ${error.message}`);
             }
         });
+    };
+
+    window.app.handlers.savePropertyHandler = async (e) => {
+        e.preventDefault();
+        const form = e.target;
+        let name = form.elements['property-name'].value;
+
+        if (!name) {
+            modals.showAlert('O nome da propriedade é obrigatório.');
+            return;
+        }
+
+        try {
+            const response = await api.saveProperty({ name });
+            const newProperty = response.data;
+            
+            // Adiciona ao estado local
+            window.app.state.properties.push(newProperty);
+            window.app.state.properties.sort((a, b) => a.name.localeCompare(b.name));
+
+            modals.showAlert('Propriedade adicionada com sucesso!');
+            form.reset();
+
+            // Atualiza a visualização se estiver na tela de propriedades
+            if (window.app.state.currentView === 'properties') {
+                window.app.renderCurrentView();
+            }
+
+            // IMPORTANTE: Atualiza o dropdown de apartamentos em modais que possam estar abertos ou para futuros usos
+            const apartmentSelect = document.getElementById('apartment-select');
+            if (apartmentSelect) {
+                const currentVal = apartmentSelect.value;
+                apartmentSelect.innerHTML = '<option value="" disabled selected>Selecione...</option>' + 
+                    window.app.state.properties.map(prop => `<option value="${prop.name}">${prop.name}</option>`).join('');
+                apartmentSelect.value = currentVal;
+            }
+
+        } catch (error) {
+            console.error('Erro ao salvar propriedade:', error);
+            modals.showAlert(`Não foi possível adicionar a propriedade: ${error.message}`);
+        }
     };
 
     window.app.handlers.changePasswordHandler = async (e) => {

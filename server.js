@@ -281,11 +281,12 @@ app.post('/api/properties', authenticateToken, authorize('admin'), logActivity('
         if (!name) {
             return res.status(400).json({ message: 'O nome da propriedade é obrigatório.' });
         }
-        const existing = await db.collection('properties').findOne({ name });
+        name = name.trim(); // Remove espaços extras no início e fim
+        const existing = await db.collection('properties').findOne({ name: new RegExp(`^${name}$`, 'i') }); // Busca insensível a maiúsculas/minúsculas
         if (existing) {
             return res.status(400).json({ message: 'Esta propriedade já existe.' });
         }
-        const result = await db.collection('properties').insertOne({ name });
+        const result = await db.collection('properties').insertOne({ name, capacity: req.body.capacity || 0, amenities: req.body.amenities || {} });
         res.status(201).json({ message: 'Propriedade criada com sucesso', data: { _id: result.insertedId, name } });
     } catch (error) {
         res.status(500).json({ message: 'Erro ao criar propriedade', error: error.message });
@@ -353,8 +354,11 @@ app.get('/api/guests', authenticateToken, async (req, res) => {
     const { role, apartment } = req.user;
     let query = {};
     if (role === 'owner') {
-        // Proprietários não devem ver a lista completa de hóspedes por privacidade.
-        return res.json([]);
+        // Proprietários só podem ver hóspedes que já tiveram reservas em seu apartamento.
+        // Isso permite que eles reutilizem cadastros sem ver a lista completa do sistema.
+        const myReservations = await db.collection('reservations').find({ apartment: apartment }).toArray();
+        const myGuestIds = myReservations.map(r => r.guestId).filter(id => id && id !== 'TASK');
+        query = { id: { $in: myGuestIds } };
     }
     const guests = await db.collection('guests').find(query).toArray();
     res.json(guests);

@@ -144,6 +144,10 @@ export function setupEventListeners(app) {
             document.getElementById('owner-nav-add-reservation-btn').addEventListener('click', () => {
                 appModals.openReservationModal(null);
             });
+            const ownerAddGuestBtn = document.getElementById('owner-add-guest-btn');
+            if (ownerAddGuestBtn) {
+                ownerAddGuestBtn.addEventListener('click', () => appModals.openGuestModal(null));
+            }
             document.getElementById('owner-nav-chat-btn').addEventListener('click', () => {
                 window.app.chat.openChatModal('admin');
             });
