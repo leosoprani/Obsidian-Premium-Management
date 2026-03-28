@@ -515,16 +515,38 @@
             border-radius: 9999px;
         }
 
-        /* Efeito de vidro para o modal de chat */
-        #chat-modal .card {
-            -webkit-backdrop-filter: blur(16px);
-            backdrop-filter: blur(16px);
-            background-color: rgba(255, 255, 255, 0.8);
-            border: 1px solid rgba(255, 255, 255, 0.2);
+        /* Efeito de vidro para o modal de chat (Tema Obsidian) */
+        #chat-modal .card,
+        #chat-list-modal .card {
+            -webkit-backdrop-filter: blur(24px);
+            backdrop-filter: blur(24px);
+            background-color: rgba(7, 14, 29, 0.85); /* Tom profundo #070e1d com transparência */
+            border: 1px solid rgba(62, 101, 255, 0.2); /* Borda azul sutil da marca */
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
         }
-        html.dark #chat-modal .card {
-            background-color: rgba(44, 44, 46, 0.75); /* Cor do card escuro com transparência */
-            border: 1px solid rgba(56, 56, 58, 0.6);
+        
+        html.dark #chat-modal .card,
+        html.dark #chat-list-modal .card {
+            background-color: rgba(17, 25, 43, 0.9); /* Tom card #11192b */
+            border: 1px solid rgba(65, 72, 89, 0.3);
+        }
+
+        /* Ajustes das bolhas e áreas do chat */
+        #chat-messages-container {
+            background-image: radial-gradient(circle at 50% 50%, rgba(62, 101, 255, 0.03) 0%, transparent 100%);
+        }
+
+        .chat-bubble-received {
+            background-color: rgba(27, 38, 59, 0.8); /* Fundo secundário levemente transparente */
+            backdrop-filter: blur(4px);
+            color: var(--text-color);
+            border: 1px solid rgba(65, 72, 89, 0.2);
+        }
+        
+        #chat-form input,
+        #chat-list-search {
+            border-color: rgba(65, 72, 89, 0.3);
+            background-color: rgba(7, 14, 29, 0.4);
         }
 
         /* Estilos para o player de áudio customizado */
