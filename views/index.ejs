@@ -1,0 +1,421 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <title>Storey Luxor | Premium Management</title>
+    <meta name="description" content="Storey Luxor - Sistema premium de gestão de propriedades e reservas">
+
+    <!-- PWA Manifest -->
+    <link rel="manifest" href="/manifest.json">
+
+    <!-- Theme Color (Android Chrome + Desktop) -->
+    <meta name="theme-color" content="#070e1d">
+
+    <!-- ===== iOS / Safari PWA (iPhone sem App Store) ===== -->
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="Storey Luxor">
+    <!-- Ícones para iPhone/iPad -->
+    <link rel="apple-touch-icon" href="/icons/icon-192x192.png">
+    <link rel="apple-touch-icon" sizes="152x152" href="/icons/icon-152x152.png">
+    <link rel="apple-touch-icon" sizes="180x180" href="/icons/icon-192x192.png">
+    <!-- Favicon -->
+    <link rel="icon" type="image/png" sizes="32x32" href="/icons/icon-96x96.png">
+    <link rel="shortcut icon" href="/icons/icon-192x192.png">
+
+    <script src="https://unpkg.com/lucide@latest"></script>
+
+    <!-- Bibliotecas Externas -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://unpkg.com/dexie@latest/dist/dexie.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.23/jspdf.plugin.autotable.min.js"></script>
+
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet"/>
+    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet"/>
+
+    <!-- CSS Compilado (Tailwind + Estilos Obsidian) -->
+    <link rel="stylesheet" href="/css/output.css?v=1.0.1">
+</head>
+
+<body class="bg-surface text-on-surface antialiased font-['Inter'] dark">
+
+    <!-- ==================== -->
+    <!-- TELA DE LOGIN        -->
+    <!-- ==================== -->
+    <div id="login-screen" class="fixed inset-0 bg-surface-container z-50 flex items-center justify-center hidden">
+        <div class="w-full max-w-sm p-8 space-y-6 bg-surface-container rounded-xl shadow-lg border border-outline-variant/20">
+            <div>
+                <h2 class="text-center text-3xl font-extrabold text-on-surface">Acessar o Sistema</h2>
+            </div>
+            <form id="login-form" class="space-y-6">
+                <div>
+                    <label for="username" class="sr-only">Usuário</label>
+                    <input id="username" name="username" type="text" autocomplete="username" required
+                        class="w-full px-3 py-2 border border-outline-variant/30 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500 bg-surface-container-high"
+                        placeholder="Usuário">
+                </div>
+                <div>
+                    <label for="password" class="sr-only">Senha</label>
+                    <input id="password" name="password" type="password" autocomplete="current-password" required
+                        class="w-full px-3 py-2 border border-outline-variant/30 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500 bg-surface-container-high"
+                        placeholder="Senha">
+                </div>
+                <button type="submit" class="w-full btn btn-primary">Entrar</button>
+                <p id="login-error" class="text-red-500 text-sm text-center mt-2"></p>
+            </form>
+        </div>
+    </div>
+
+    <!-- ======================== -->
+    <!-- PORTAL DO PROPRIETÁRIO   -->
+    <!-- ======================== -->
+    <div id="owner-portal" class="flex min-h-screen p-4 sm:p-6 lg:p-8 hidden">
+        <div class="w-full max-w-6xl mx-auto">
+            <header class="card p-4 mb-6 flex flex-col sm:flex-row justify-between items-center gap-4 relative z-30">
+                <div class="text-center sm:text-left">
+                    <h1 class="text-lg font-semibold text-outline">Storey Luxor Home & Service</h1>
+                    <p id="owner-welcome-message" class="text-2xl font-bold"></p>
+                    <div id="owner-apartment-switcher-container" class="mt-1">
+                        <p id="owner-apartment-name" class="text-sm text-outline"></p>
+                        <select id="owner-apartment-select" class="hidden text-sm bg-surface-container border border-outline-variant/30 rounded px-2 py-1 focus:outline-none focus:ring-1 focus:ring-primary"></select>
+                    </div>
+                </div>
+                <div class="hidden sm:flex items-center gap-3 justify-center">
+                    <div class="relative">
+                        <button id="owner-chat-btn" class="btn btn-ghost p-2 w-9 h-9" title="Mensagens"><i data-lucide="message-square"></i></button>
+                        <span id="owner-chat-unread-badge" class="absolute top-0 right-0 h-2.5 w-2.5 rounded-full bg-red-500 border-2 border-surface hidden"></span>
+                    </div>
+                    <button id="owner-add-guest-btn" class="btn btn-ghost border border-outline-variant/30 hover:bg-surface-variant/20"><i data-lucide="user-plus"></i><span class="hidden md:inline">Novo Hóspede</span></button>
+                    <button id="owner-request-reservation-btn" class="btn btn-primary"><i data-lucide="plus-circle"></i><span class="hidden md:inline">Solicitar Reserva</span></button>
+                    <div id="owner-profile-menu" class="relative">
+                        <button id="owner-profile-btn" class="btn btn-ghost p-2 w-11 h-11"><i data-lucide="user-circle-2" class="w-7 h-7"></i></button>
+                        <div id="owner-profile-dropdown" class="absolute right-0 mt-2 w-56 card p-2 hidden z-50"></div>
+                    </div>
+                </div>
+            </header>
+            <main class="space-y-6 pb-24 lg:pb-0">
+                <div class="flex flex-col sm:flex-row justify-between sm:items-center gap-4">
+                    <h2 class="text-2xl font-bold">Minhas Reservas</h2>
+                    <div class="relative hidden sm:block w-full sm:w-64">
+                        <input type="text" id="owner-reservation-search-desktop" placeholder="Buscar por hóspede..." class="w-full pl-4 pr-4 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 bg-surface-container-high">
+                    </div>
+                </div>
+                <div id="owner-reservations-list"></div>
+                <div class="pt-6 border-t">
+                    <h2 class="text-2xl font-bold mb-6">Desempenho do Apartamento</h2>
+                    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                        <div id="owner-monthly-occupancy-chart-container" class="card p-6"></div>
+                        <div id="owner-revenue-chart-container" class="card p-6"></div>
+                    </div>
+                    <div id="owner-dashboard-stats" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 mt-6"></div>
+                </div>
+            </main>
+            <!-- Barra de Navegação Inferior (Mobile) -->
+            <div id="owner-bottom-nav" class="fixed bottom-0 left-0 right-0 card !rounded-b-none lg:hidden flex justify-around items-center p-1 z-40 border-t">
+                <button id="owner-nav-reservations-btn" class="btn btn-ghost flex-col h-auto p-2 text-blue-500"><i data-lucide="calendar-days"></i><span class="text-xs font-semibold">Reservas</span></button>
+                <button id="owner-nav-search-btn" class="btn btn-ghost flex-col h-auto p-2"><i data-lucide="search"></i><span class="text-xs">Buscar</span></button>
+                <button id="owner-nav-add-reservation-btn" class="btn btn-ghost flex-col h-auto p-2"><i data-lucide="plus-circle"></i><span class="text-xs">Solicitar</span></button>
+                <button id="owner-nav-chat-btn" class="btn btn-ghost flex-col h-auto p-2 relative"><i data-lucide="message-square"></i><span class="text-xs">Mensagens</span><span id="owner-chat-unread-badge-mobile" class="absolute top-1 right-2 h-2 w-2 rounded-full bg-red-500"></span></button>
+                <div id="owner-profile-menu-mobile" class="relative">
+                    <button id="owner-nav-profile-btn" class="btn btn-ghost flex-col h-auto p-2"><i data-lucide="user-circle-2"></i><span class="text-xs">Perfil</span></button>
+                    <div id="owner-profile-dropdown-mobile" class="absolute right-0 bottom-full mb-2 w-56 card p-2 hidden z-50"></div>
+                </div>
+            </div>
+            <!-- Barra de Pesquisa Flutuante (Mobile) -->
+            <div id="owner-mobile-search-bar" class="fixed bottom-20 left-4 right-4 card p-2 hidden z-40 transform transition-all opacity-0 translate-y-4">
+                <div class="flex items-center gap-2">
+                    <i data-lucide="search" class="w-5 h-5 text-gray-400 ml-2"></i>
+                    <input type="text" id="owner-reservation-search-mobile" placeholder="Buscar por hóspede..." class="w-full py-2 bg-transparent focus:outline-none">
+                    <button id="owner-close-mobile-search-btn" class="btn btn-ghost p-2 w-9 h-9 rounded-full"><i data-lucide="x"></i></button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            if (window.lucide && typeof lucide.createIcons === 'function') {
+                lucide.createIcons();
+            }
+        });
+    </script>
+
+    <!-- ======================== -->
+    <!-- APP SHELL (Admin/Staff) -->
+    <!-- ======================== -->
+    <div id="app" class="flex min-h-screen lg:p-6 lg:gap-6 hidden">
+
+        <%- include('partials/sidebar') %>
+
+        <!-- Overlay para o menu lateral em modo mobile -->
+        <div id="sidebar-overlay" class="fixed inset-0 bg-black bg-opacity-40 backdrop-blur-sm hidden z-30 lg:hidden"></div>
+
+        <!-- Conteúdo Principal -->
+        <div class="flex-1 w-full lg:w-auto p-4 lg:p-0 overflow-y-auto">
+            <!-- Cabeçalho de Ações (TopNavBar Obsidian) -->
+            <header class="card lg:rounded-[2rem] p-4 lg:p-6 mb-6 mt-2 lg:mt-0 flex flex-col lg:flex-row items-center justify-between gap-4 bg-surface-container-low border-outline-variant/20 shadow-lg font-['Inter']">
+                <div class="w-full lg:flex-1 flex items-center gap-4">
+                    <button id="sidebar-toggle-btn" class="lg:hidden btn btn-ghost p-2 w-9 h-9 flex-shrink-0 text-on-surface"><span class="material-symbols-outlined">menu</span></button>
+                    <div class="relative w-full lg:max-w-md">
+                        <span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-on-surface-variant text-lg">search</span>
+                        <input type="text" id="search-input" placeholder="Buscar propriedades, reservas ou finanças..." class="bg-surface-container border-none rounded-full py-2.5 pl-10 pr-4 w-full text-on-surface focus:ring-1 focus:ring-primary placeholder:text-outline text-xs">
+                    </div>
+                </div>
+                <div class="w-full lg:w-auto flex items-center justify-between lg:justify-end gap-3 sm:gap-6">
+                    <div class="flex items-center gap-4 text-on-surface-variant mr-2">
+                        <div class="relative">
+                            <span id="admin-chat-btn" class="material-symbols-outlined cursor-pointer hover:text-primary transition-colors">message</span>
+                            <span id="admin-chat-unread-badge" class="absolute -top-1 -right-1 h-2.5 w-2.5 rounded-full bg-error border-2 border-surface hidden"></span>
+                        </div>
+                        <div class="relative">
+                            <span id="notifications-btn" class="material-symbols-outlined cursor-pointer hover:text-primary transition-colors">notifications</span>
+                            <span id="notifications-count-badge" class="absolute -top-1 -right-1 h-3 w-3 rounded-full bg-error text-white text-[8px] flex items-center justify-center hidden"></span>
+                            <div id="notifications-panel" class="absolute right-0 mt-2 w-80 bg-surface-container border border-outline-variant/20 rounded-xl shadow-xl overflow-hidden hidden z-50"></div>
+                        </div>
+                    </div>
+                    <div class="hidden sm:block h-6 w-[1px] bg-outline-variant/30"></div>
+                    <div class="flex items-center gap-2 sm:gap-3">
+                        <button id="add-guest-btn" class="border border-secondary/40 text-secondary px-3 py-2 rounded-xl text-xs font-bold hover:bg-secondary/10 transition-colors flex items-center gap-1">
+                            <span class="material-symbols-outlined text-sm hidden sm:inline">person_add</span> + Guest
+                        </button>
+                        <button id="add-reservation-btn" class="bg-gradient-to-br from-primary to-primary-container text-on-primary px-4 py-2 rounded-xl text-xs font-bold transition-transform active:scale-95 shadow-lg shadow-primary/10 flex items-center gap-1">
+                            <span class="material-symbols-outlined text-sm hidden sm:inline">event</span> + Reserv.
+                        </button>
+                        <button id="generate-pdf-btn" class="hidden lg:flex border border-outline-variant/30 text-on-surface-variant px-3 py-2 rounded-xl text-xs font-bold hover:bg-surface-variant transition-colors items-center gap-1">
+                            <span class="material-symbols-outlined text-sm">picture_as_pdf</span> PDF
+                        </button>
+                    </div>
+                </div>
+                <!-- Controles de Calendário -->
+                <div class="w-full lg:w-auto flex justify-center mt-2 lg:mt-0">
+                    <div id="calendar-controls" class="flex items-center gap-1 bg-surface-container px-2 py-1 rounded-full border border-outline-variant/20">
+                        <button id="prev-month-btn" class="btn btn-ghost p-1 h-7 w-7 rounded-full text-on-surface hover:bg-surface-variant"><span class="material-symbols-outlined text-sm">chevron_left</span></button>
+                        <button id="today-btn" class="btn btn-ghost px-2 py-1 h-7 text-[10px] font-bold text-primary uppercase tracking-wider rounded-full hover:bg-surface-variant">Hoje</button>
+                        <h2 id="current-month-year" class="text-xs font-bold w-28 text-center text-on-surface tracking-wide"></h2>
+                        <button id="next-month-btn" class="btn btn-ghost p-1 h-7 w-7 rounded-full text-on-surface hover:bg-surface-variant"><span class="material-symbols-outlined text-sm">chevron_right</span></button>
+                    </div>
+                </div>
+            </header>
+
+            <!-- ======================== -->
+            <!-- CONTAINER DAS VIEWS    -->
+            <!-- ======================== -->
+            <main>
+                <!-- Dashboard View -->
+                <div id="dashboard-view">
+                    <section class="flex justify-between items-end mb-8">
+                        <div>
+                            <h2 class="text-3xl font-extrabold tracking-tight text-on-surface">Inteligência de Portfólio</h2>
+                            <p class="text-on-surface-variant mt-1">Desempenho em tempo real das suas propriedades premium.</p>
+                        </div>
+                        <div class="flex gap-3">
+                            <div class="bg-surface-container-low px-4 py-2 rounded-xl flex items-center gap-2 border border-outline-variant/20">
+                                <span class="w-2 h-2 rounded-full bg-secondary"></span>
+                                <span class="text-xs font-bold text-on-surface-variant">Mercado: Em Alta</span>
+                            </div>
+                        </div>
+                    </section>
+                    <div class="grid grid-cols-12 gap-6">
+                        <!-- Gráfico de Receita -->
+                        <div class="col-span-12 lg:col-span-8 bg-surface-container rounded-[2rem] p-8 relative overflow-hidden group border border-outline-variant/10 shadow-[0_8px_32px_-16px_rgba(223,229,250,0.05)]">
+                            <div class="absolute top-0 right-0 p-8"><span class="text-4xl font-extrabold text-primary-fixed-dim/10 tracking-tighter">RECEITA</span></div>
+                            <div class="relative z-10">
+                                <h3 class="text-lg font-bold text-on-surface">Desempenho de Receita</h3>
+                                <p class="text-on-surface-variant text-sm mb-6">Ocupação Diária (Mês Atual)</p>
+                                <div class="relative h-48 mb-6"><canvas id="monthly-trend-chart"></canvas></div>
+                                <div id="dashboard-financial-summary" class="grid grid-cols-3 gap-6 pt-6 border-t border-outline-variant/15"><!-- Injetado por JS --></div>
+                            </div>
+                        </div>
+                        <!-- Taxa de Ocupação -->
+                        <div class="col-span-12 lg:col-span-4 flex flex-col gap-6">
+                            <div class="bg-surface-container-high rounded-[2rem] p-8 flex-1 flex flex-col justify-center text-center relative border border-outline-variant/10 shadow-lg">
+                                <h3 class="text-sm font-bold uppercase tracking-widest text-outline absolute top-6 w-full left-0">Taxa de Ocupação</h3>
+                                <div class="relative h-44 w-44 mx-auto mt-6"><canvas id="occupancy-chart"></canvas></div>
+                            </div>
+                            <div class="bg-surface-container-highest rounded-[2rem] p-6 flex items-center gap-4 transition-transform hover:scale-[1.02] cursor-pointer border border-outline-variant/10">
+                                <div class="w-12 h-12 rounded-2xl bg-primary-dim/20 flex items-center justify-center text-primary"><span class="material-symbols-outlined">analytics</span></div>
+                                <div>
+                                    <p class="text-sm font-bold text-on-surface">Resumo de Tendências</p>
+                                    <p class="text-xs text-on-surface-variant">Clique para exibir métricas completas</p>
+                                </div>
+                                <span class="material-symbols-outlined ml-auto text-outline">chevron_right</span>
+                            </div>
+                        </div>
+                    </div>
+                    <!-- Grade Inferior -->
+                    <div class="grid grid-cols-12 gap-8 mt-6 pb-20">
+                        <div class="col-span-12 lg:col-span-5 space-y-4">
+                            <div class="flex justify-between items-center mb-6">
+                                <h3 class="text-xl font-bold text-on-surface flex items-center gap-2">
+                                    <span class="material-symbols-outlined text-primary">event</span> Próximos Eventos
+                                </h3>
+                            </div>
+                            <div id="upcoming-events-container" class="space-y-3 max-h-80 overflow-y-auto hide-scrollbar p-2"><!-- Injetado por JS --></div>
+                        </div>
+                        <div class="col-span-12 lg:col-span-7">
+                            <div class="flex justify-between items-center mb-6">
+                                <h3 class="text-xl font-bold text-on-surface">Principais Propriedades (30 dias)</h3>
+                            </div>
+                            <div class="bg-surface-container rounded-[2rem] p-6 border border-outline-variant/10 shadow-lg">
+                                <div class="relative h-64"><canvas id="apartment-occupancy-chart"></canvas></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Calendar View -->
+                <div id="calendar-view" class="lg:card lg:shadow-sm lg:p-0 hidden">
+                    <div class="table-responsive overflow-x-auto hidden lg:block"><div id="calendar-container"></div></div>
+                    <div id="calendar-mobile-container" class="block lg:hidden"></div>
+                </div>
+
+                <!-- Reservas Ativas View -->
+                <div id="cards-view" class="hidden">
+                    <div class="border-b border-outline-variant/20 mb-4">
+                        <nav class="-mb-px flex space-x-4">
+                            <button id="active-tab-reservations" class="tab-button tab-reservations active"><i data-lucide="layout-list" class="w-4 h-4"></i><span>Reservas</span></button>
+                            <button id="active-tab-tasks" class="tab-button tab-tasks"><i data-lucide="wrench" class="w-4 h-4"></i><span>Limpeza / Manutenção</span></button>
+                        </nav>
+                    </div>
+                    <div id="active-reservations-tab-content" class="tab-content">
+                        <div id="active-reservations-container" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"></div>
+                    </div>
+                    <div id="active-tasks-tab-content" class="tab-content hidden">
+                        <div id="active-tasks-container" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"></div>
+                    </div>
+                </div>
+
+                <!-- Propriedades View -->
+                <div id="properties-view" class="hidden">
+                    <div class="card">
+                        <div class="p-4 sm:p-6"><h3 class="text-lg font-semibold">Gerenciamento de Propriedades</h3></div>
+                        <div class="p-4 sm:p-6 border-t">
+                            <form id="add-property-form" class="flex flex-col sm:flex-row gap-4">
+                                <input type="text" id="new-property-name" placeholder="Nome do novo apartamento (ex: 101, 202B)" class="w-full px-3 py-2 border rounded-md bg-surface-container-high" required>
+                                <button type="submit" class="btn btn-primary">Adicionar Propriedade</button>
+                            </form>
+                        </div>
+                        <div id="properties-list-container" class="p-4 sm:p-6 border-t"></div>
+                    </div>
+                </div>
+
+                <!-- Usuários View -->
+                <div id="users-view" class="hidden space-y-6">
+                    <div class="card overflow-hidden">
+                        <div class="p-4 sm:p-6 flex justify-between items-center">
+                            <h3 class="text-lg font-semibold">Usuários do Sistema (Admin/Staff)</h3>
+                            <button id="add-user-btn" class="btn btn-primary"><i data-lucide="plus"></i> Adicionar</button>
+                        </div>
+                        <div id="system-users-list-container"></div>
+                    </div>
+                    <div class="card overflow-hidden">
+                        <div class="p-4 sm:p-6 flex justify-between items-center">
+                            <h3 class="text-lg font-semibold">Usuários Proprietários (Owners)</h3>
+                            <button id="add-owner-btn" class="btn btn-primary"><i data-lucide="plus"></i> Adicionar Proprietário</button>
+                        </div>
+                        <div id="owner-users-list-container"></div>
+                    </div>
+                </div>
+
+                <!-- Logs View -->
+                <div id="logs-view" class="hidden">
+                    <div class="card overflow-hidden">
+                        <div class="p-4 sm:p-6 border-b">
+                            <h3 class="text-lg font-semibold mb-4">Filtrar Log de Atividades</h3>
+                            <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4 items-end">
+                                <input type="text" id="log-filter-username" placeholder="Nome de usuário" class="w-full px-3 py-2 border rounded-md bg-surface-container-high">
+                                <div>
+                                    <label for="log-filter-start-date" class="text-xs text-outline">Data Início</label>
+                                    <input type="date" id="log-filter-start-date" class="w-full px-3 py-2 border rounded-md bg-surface-container-high">
+                                </div>
+                                <div>
+                                    <label for="log-filter-end-date" class="text-xs text-outline">Data Fim</label>
+                                    <input type="date" id="log-filter-end-date" class="w-full px-3 py-2 border rounded-md bg-surface-container-high">
+                                </div>
+                                <div class="flex gap-2">
+                                    <button id="log-filter-btn" class="btn btn-primary w-full">Filtrar</button>
+                                    <button id="log-clear-filter-btn" class="btn btn-secondary w-full">Limpar</button>
+                                </div>
+                            </div>
+                        </div>
+                        <div id="logs-container" class="min-h-[300px]"></div>
+                        <div id="logs-pagination-container" class="p-4 flex justify-center items-center gap-4"></div>
+                    </div>
+                </div>
+
+                <!-- Views simples (conteúdo injetado por JS) -->
+                <div id="pending-view" class="hidden">
+                    <div id="pending-reservations-container" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"></div>
+                </div>
+                <div id="approvals-view" class="hidden space-y-6">
+                    <div class="flex justify-between items-center">
+                        <h2 class="text-2xl font-bold">Solicitações de Aprovação</h2>
+                    </div>
+                    <div id="pending-approvals-container" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"></div>
+                </div>
+                <div id="guests-view" class="hidden">
+                    <div id="guests-list-container" class="card overflow-hidden"></div>
+                </div>
+                <div id="finished-view" class="hidden">
+                    <div id="finished-reservations-container" class="card overflow-hidden"></div>
+                </div>
+                <div id="recent-guests-view" class="hidden">
+                    <div id="recent-guests-container" class="card overflow-hidden"></div>
+                </div>
+                <div id="employees-view" class="hidden">
+                    <div id="employees-list-container" class="card overflow-hidden"></div>
+                </div>
+
+                <!-- Financeiro View -->
+                <div id="financial-view" class="hidden space-y-6 md:space-y-8">
+                    <div>
+                        <h2 id="financial-title" class="text-xl sm:text-2xl font-bold mb-4">Resumo Financeiro</h2>
+                        <div id="financial-summary-container" class="grid grid-cols-1 md:grid-cols-3 gap-6"></div>
+                    </div>
+                    <div class="card overflow-hidden">
+                        <div class="p-4 sm:p-6"><h3 class="text-lg font-semibold">Receitas do Mês</h3></div>
+                        <div id="financial-reservations-container"></div>
+                    </div>
+                    <div class="card overflow-hidden">
+                        <div class="p-4 sm:p-6 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
+                            <h3 class="text-lg font-semibold">Despesas do Mês</h3>
+                            <button id="add-expense-btn" class="btn btn-secondary"><i data-lucide="plus"></i> Adicionar Despesa</button>
+                        </div>
+                        <div id="financial-expenses-container"></div>
+                    </div>
+                </div>
+
+                <div id="search-results-view" class="hidden space-y-6"></div>
+            </main>
+        </div>
+    </div>
+
+    <!-- ======================== -->
+    <!-- MODAIS (Partial)        -->
+    <!-- ======================== -->
+    <%- include('partials/modals') %>
+
+    <!-- Scripts -->
+    <script src="https://cdn.socket.io/4.7.5/socket.io.min.js"></script>
+    <script type="module" src="/js/pdfGenerator.js?v=1.0.1"></script>
+    <script type="module" src="/js/chat.js?v=1.0.1"></script>
+    <script type="module" src="/js/events.js?v=1.0.1"></script>
+    <script type="module" src="/js/main.js?v=1.0.1"></script>
+
+    <script>
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('/sw.js').then(registration => {
+                    console.log('ServiceWorker registrado com sucesso: ', registration.scope);
+                }).catch(error => {
+                    console.log('Falha ao registrar o ServiceWorker: ', error);
+                });
+            });
+        }
+    </script>
+</body>
+</html>

@@ -1,0 +1,1127 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+
+<head>
+
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <!-- PWA Manifest e Meta Tags -->
+    <link rel="manifest" href="/manifest.json">
+    <meta name="theme-color" content="#007BFF">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <!-- Biblioteca para Gráficos -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script src="https://unpkg.com/dexie@latest/dist/dexie.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.23/jspdf.plugin.autotable.min.js"></script>
+
+    
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet"/>
+    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet"/>
+    
+
+    <link rel="stylesheet" href="/css/output.css">
+</head>
+<body class="bg-surface text-on-surface antialiased font-['Inter'] dark">
+
+    <!-- Tela de Login -->
+    <div id="login-screen" class="fixed inset-0 z-50 flex items-center justify-center hidden backdrop-blur-xl bg-black/10">
+        <div class="w-full max-w-sm p-8 space-y-6 glass-effect rounded-[2rem] shadow-2xl border-white/10">
+            <div>
+                <h2 class="text-center text-3xl font-extrabold text-gray-900 text-white">
+                    Acessar o Sistema
+                </h2>
+            </div>
+            <form id="login-form" class="space-y-6">
+                <div>
+                    <label for="username" class="sr-only">Usuário</label>
+                    <input id="username" name="username" type="text" autocomplete="username" required class="w-full px-3 py-2 border border-outline-variant/30 dark:border-outline-variant/20 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500 bg-surface-container-high bg-surface-container" placeholder="Usuário">
+                </div>
+                <div class="relative group">
+                    <label for="password" class="sr-only">Senha</label>
+                    <input id="password" name="password" type="password" autocomplete="current-password" required class="w-full px-3 py-2 border border-outline-variant/30 dark:border-outline-variant/20 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500 bg-surface-container-high bg-surface-container pr-10" placeholder="Senha">
+                    <button type="button" id="toggle-login-password" class="absolute right-3 top-1/2 -translate-y-1/2 text-outline hover:text-primary transition-colors">
+                        <i data-lucide="eye" class="w-5 h-5"></i>
+                    </button>
+                </div>
+                <div class="flex items-center">
+                    <input id="remember-me" name="remember-me" type="checkbox" class="h-4 w-4 rounded border-outline-variant/30 text-blue-600 focus:ring-blue-500 bg-surface-container">
+                    <label for="remember-me" class="ml-2 block text-sm text-outline">
+                        Lembrar meu usuário
+                    </label>
+                </div>
+                <button type="submit" class="w-full btn btn-primary">Entrar</button>
+                <p id="login-error" class="text-red-500 text-sm text-center mt-2"></p>
+            </form>
+        </div>
+    </div>
+
+    <!-- Portal do Proprietário -->
+    <div id="owner-portal" class="flex min-h-screen p-4 sm:p-6 lg:p-8 hidden bg-surface">
+        <div class="w-full max-w-6xl mx-auto">
+            <header class="card !bg-white/5 backdrop-blur-xl p-4 mb-6 flex flex-col sm:flex-row justify-between items-center gap-4 relative z-30 border-white/5 shadow-2xl !rounded-[2rem]">
+                <!-- Lado Esquerdo: Mensagem de Boas-vindas -->
+                <div class="text-center sm:text-left">
+                    <h1 class="text-lg font-semibold text-outline">Storey Luxor Home & Service</h1>
+                    <p id="owner-welcome-message" class="text-2xl font-bold"></p>
+                    <p id="owner-apartment-name" class="text-sm text-outline"></p>
+                </div>
+                <!-- Lado Direito: Ações e Perfil (visível apenas em telas maiores) -->
+                <div class="hidden sm:flex items-center gap-3 justify-center">
+                    <div class="relative">
+                        <button id="owner-chat-btn" class="btn btn-ghost p-2 w-9 h-9"><i data-lucide="message-square"></i></button>
+                        <span id="owner-chat-unread-badge" class="absolute top-0 right-0 h-2.5 w-2.5 rounded-full bg-red-500 border-2 border-white dark:border-gray-800 hidden"></span>
+                    </div>
+                    <button id="owner-request-reservation-btn" class="btn btn-primary"><i data-lucide="plus-circle"></i><span class="hidden md:inline">Solicitar Reserva</span></button>
+                    <div id="owner-profile-menu" class="relative">
+                        <button id="owner-profile-btn" class="btn btn-ghost p-2 w-11 h-11"><i data-lucide="user-circle-2" class="w-7 h-7"></i></button>
+                        <div id="owner-profile-dropdown" class="absolute right-0 mt-2 w-56 card p-2 hidden z-50"></div>
+                    </div>
+                </div>
+            </header>
+            <main class="space-y-6 pb-24 lg:pb-0">
+                <!-- Listas de Reservas do Proprietário -->
+                <div class="flex flex-col sm:flex-row justify-between sm:items-center gap-4">
+                    <h2 class="text-2xl font-bold">Minhas Reservas</h2>
+                    <div class="relative hidden sm:block w-full sm:w-64">
+                        <input type="text" id="owner-reservation-search-desktop" placeholder="Buscar por hóspede..." class="w-full pl-4 pr-4 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 bg-surface-container-high">
+                    </div>
+                </div>
+                <div id="owner-reservations-list"></div>
+
+                <!-- Gráficos e Estatísticas -->
+                <div class="pt-6 border-t">
+                    <h2 class="text-2xl font-bold mb-6">Desempenho do Apartamento</h2>
+                    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                        <div id="owner-monthly-occupancy-chart-container" class="card p-6"></div>
+                        <div id="owner-revenue-chart-container" class="card p-6"></div>
+                    </div>
+                    <div id="owner-dashboard-stats" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 mt-6"></div>
+                </div>
+            </main>
+
+            <!-- Barra de Navegação Inferior (Mobile) -->
+            <div id="owner-bottom-nav" class="fixed bottom-0 left-0 right-0 card !rounded-b-none lg:hidden flex justify-around items-center p-1 z-40 border-t">
+                <button id="owner-nav-reservations-btn" class="btn btn-ghost flex-col h-auto p-2 text-blue-500">
+                    <i data-lucide="calendar-days"></i>
+                    <span class="text-xs font-semibold">Reservas</span>
+                </button>
+                <button id="owner-nav-search-btn" class="btn btn-ghost flex-col h-auto p-2">
+                    <i data-lucide="search"></i>
+                    <span class="text-xs">Buscar</span>
+                </button>
+                <button id="owner-nav-add-reservation-btn" class="btn btn-ghost flex-col h-auto p-2">
+                    <i data-lucide="plus-circle"></i>
+                    <span class="text-xs">Solicitar</span>
+                </button>
+                <button id="owner-nav-chat-btn" class="btn btn-ghost flex-col h-auto p-2 relative">
+                    <i data-lucide="message-square"></i>
+                    <span class="text-xs">Mensagens</span>
+                    <span id="owner-chat-unread-badge-mobile" class="absolute top-1 right-2 h-2 w-2 rounded-full bg-red-500"></span>
+                </button>
+                <div id="owner-profile-menu-mobile" class="relative">
+                    <button id="owner-nav-profile-btn" class="btn btn-ghost flex-col h-auto p-2">
+                        <i data-lucide="user-circle-2"></i>
+                        <span class="text-xs">Perfil</span>
+                    </button>
+                    <div id="owner-profile-dropdown-mobile" class="absolute right-0 bottom-full mb-2 w-56 card p-2 hidden z-50"></div>
+                </div>
+            </div>
+
+            <!-- Barra de Pesquisa Flutuante (Mobile) -->
+            <div id="owner-mobile-search-bar" class="fixed bottom-20 left-4 right-4 card p-2 hidden z-40 transform transition-all opacity-0 translate-y-4">
+                <div class="flex items-center gap-2">
+                    <i data-lucide="search" class="w-5 h-5 text-gray-400 ml-2"></i>
+                    <input type="text" id="owner-reservation-search-mobile" placeholder="Buscar por hóspede..." class="w-full py-2 bg-transparent focus:outline-none">
+                    <button id="owner-close-mobile-search-btn" class="btn btn-ghost p-2 w-9 h-9 rounded-full">
+                        <i data-lucide="x"></i></button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Garante que os ícones Lucide sejam renderizados após o carregamento
+        document.addEventListener('DOMContentLoaded', function () {
+            if (window.lucide && typeof lucide.createIcons === 'function') {
+                lucide.createIcons();
+            }
+        });
+    </script>
+
+    <div id="app" class="flex min-h-screen lg:p-6 lg:gap-6 hidden">
+        <!-- Barra Lateral de Navegação Obsidian -->
+        <aside id="sidebar" class="bg-[#0b1323] fixed lg:relative z-50 w-64 h-full flex-shrink-0 flex flex-col transform -translate-x-full lg:translate-x-0 transition-transform duration-300 ease-in-out py-6 font-['Inter'] antialiased tracking-tight shadow-[32px_0_32px_-16px_rgba(223,229,250,0.04)] text-[#a4abbf]">
+            <div class="px-6 mb-10 flex justify-between items-center">
+                <div>
+                    <h1 class="text-xl font-bold text-[#dfe5fa] tracking-tighter">Obsidian</h1>
+                    <p class="text-xs text-[#a4abbf] uppercase tracking-widest mt-1">Premium Mgmt</p>
+                </div>
+                <button id="theme-toggle-btn" class="btn btn-ghost p-2 w-9 h-9 text-[#dfe5fa] hover:bg-[#1b263b] rounded-full lg:hidden"><i data-lucide="x"></i></button>
+            </div>
+            
+            <nav id="main-tabs" class="flex-1 space-y-1 overflow-y-auto hide-scrollbar px-2">
+                <div id="view-tab-dashboard" class="view-tab active cursor-pointer hover:text-[#dfe5fa] hover:bg-[#1b263b] rounded-xl my-1 px-4 py-3 flex items-center gap-3 transition-all duration-300"><span class="material-symbols-outlined">dashboard</span><span>Dashboard</span></div>
+                <div id="view-tab-calendar" class="view-tab cursor-pointer hover:text-[#dfe5fa] hover:bg-[#1b263b] rounded-xl my-1 px-4 py-3 flex items-center gap-3 transition-all duration-300"><span class="material-symbols-outlined">calendar_month</span><span>Calendário</span></div>
+                <div id="view-tab-cards" class="view-tab cursor-pointer hover:text-[#dfe5fa] hover:bg-[#1b263b] rounded-xl my-1 px-4 py-3 flex items-center gap-3 transition-all duration-300"><span class="material-symbols-outlined">book_online</span><span>Reservas ativas</span></div>
+                <div id="view-tab-pending" class="view-tab cursor-pointer hover:text-[#dfe5fa] hover:bg-[#1b263b] rounded-xl my-1 px-4 py-3 flex items-center gap-3 transition-all duration-300"><span class="material-symbols-outlined">schedule</span><span>Reservas pendentes</span></div>
+                <div id="view-tab-approvals" class="view-tab cursor-pointer hover:text-[#dfe5fa] hover:bg-[#1b263b] rounded-xl my-1 px-4 py-3 flex items-center gap-3 transition-all duration-300 relative"><span class="material-symbols-outlined">check_circle</span><span>Aprovações</span><span id="approvals-count-badge" class="absolute top-3 right-3 h-4 w-4 rounded-full bg-error text-white text-[10px] items-center justify-center hidden flex"></span></div>
+                <div id="view-tab-finished" class="view-tab cursor-pointer hover:text-[#dfe5fa] hover:bg-[#1b263b] rounded-xl my-1 px-4 py-3 flex items-center gap-3 transition-all duration-300"><span class="material-symbols-outlined">archive</span><span>R. Finalizadas</span></div>
+                <div id="view-tab-properties" class="view-tab cursor-pointer hover:text-[#dfe5fa] hover:bg-[#1b263b] rounded-xl my-1 px-4 py-3 flex items-center gap-3 transition-all duration-300"><span class="material-symbols-outlined">domain</span><span>Propriedades</span></div>
+                <div id="view-tab-guests" class="view-tab cursor-pointer hover:text-[#dfe5fa] hover:bg-[#1b263b] rounded-xl my-1 px-4 py-3 flex items-center gap-3 transition-all duration-300"><span class="material-symbols-outlined">group</span><span>Hóspedes</span></div>
+                
+                <div class="pt-4 pb-2 px-4"><span class="text-[10px] font-bold text-[#414859] uppercase tracking-widest">Operações</span></div>
+                
+                <div id="view-tab-logs" class="view-tab cursor-pointer hover:text-[#dfe5fa] hover:bg-[#1b263b] rounded-xl my-1 px-4 py-3 flex items-center gap-3 transition-all duration-300"><span class="material-symbols-outlined">history</span><span>Atividades</span></div>
+                <div id="view-tab-users" class="view-tab cursor-pointer hover:text-[#dfe5fa] hover:bg-[#1b263b] rounded-xl my-1 px-4 py-3 flex items-center gap-3 transition-all duration-300"><span class="material-symbols-outlined">manage_accounts</span><span>Usuários</span></div>
+                <div id="view-tab-financial" class="view-tab cursor-pointer hover:text-[#dfe5fa] hover:bg-[#1b263b] rounded-xl my-1 px-4 py-3 flex items-center gap-3 transition-all duration-300"><span class="material-symbols-outlined">payments</span><span>Financeiro</span></div>
+                <div id="view-tab-employees" class="view-tab cursor-pointer hover:text-[#dfe5fa] hover:bg-[#1b263b] rounded-xl my-1 px-4 py-3 flex items-center gap-3 transition-all duration-300"><span class="material-symbols-outlined">badge</span><span>Funcionários</span></div>
+                <div id="view-tab-recent-guests" class="view-tab cursor-pointer hover:text-[#dfe5fa] hover:bg-[#1b263b] rounded-xl my-1 px-4 py-3 flex items-center gap-3 transition-all duration-300"><span class="material-symbols-outlined">person_add</span><span>Cadatros Recentes</span></div>
+
+                <div class="pt-4 pb-2 px-4"><span class="text-[10px] font-bold text-[#414859] uppercase tracking-widest">Utilitários</span></div>
+                
+                <div>
+                    <div id="maintenance-accordion-btn" class="view-tab cursor-pointer hover:text-[#dfe5fa] hover:bg-[#1b263b] rounded-xl my-1 px-4 py-3 flex items-center gap-3 transition-all duration-300">
+                        <span class="material-symbols-outlined">build</span>
+                        <span>Manutenção</span>
+                        <span class="material-symbols-outlined ml-auto text-sm transition-transform">expand_more</span>
+                    </div>
+                    <div id="maintenance-accordion-content" class="hidden pl-6 pt-1 space-y-1">
+                         <a href="#" id="add-cleaning-btn" class="flex hover:text-[#dfe5fa] py-2 px-2 items-center gap-2 text-sm"><span class="material-symbols-outlined text-[16px] text-tertiary">cleaning_services</span> Limpeza</a>
+                         <a href="#" id="add-maintenance-btn" class="flex hover:text-[#dfe5fa] py-2 px-2 items-center gap-2 text-sm"><span class="material-symbols-outlined text-[16px] text-secondary">handyman</span> Manutenção</a>
+                         <a href="#" id="add-blocking-btn" class="flex hover:text-[#dfe5fa] py-2 px-2 items-center gap-2 text-sm"><span class="material-symbols-outlined text-[16px] text-error">lock</span> Bloqueio</a>
+                         <a href="#" id="add-employee-btn" class="flex hover:text-[#dfe5fa] py-2 px-2 items-center gap-2 text-sm"><span class="material-symbols-outlined text-[16px] text-primary">person_add</span> Empregado</a>
+                         <a href="#" id="add-expense-link-sidebar" class="flex hover:text-[#dfe5fa] py-2 px-2 items-center gap-2 text-sm"><span class="material-symbols-outlined text-[16px] text-secondary-dim">receipt</span> Despesa</a>
+                    </div>
+                </div>
+            </nav>
+            <div class="px-4 mt-auto space-y-1 border-t border-outline-variant/20 pt-4">
+                <button id="settings-btn" class="w-full text-left cursor-pointer hover:text-[#dfe5fa] hover:bg-[#1b263b] rounded-xl my-1 px-4 py-3 flex items-center gap-3 transition-all duration-300"><span class="material-symbols-outlined">settings</span> Configurações</button>
+                <button id="save-progress-btn" class="w-full text-left cursor-pointer hover:text-[#dfe5fa] hover:bg-[#1b263b] rounded-xl my-1 px-4 py-3 flex items-center gap-3 transition-all duration-300"><span class="material-symbols-outlined">save</span> Backup Local</button>
+                <button id="exit-app-btn" class="w-full text-left text-error hover:bg-error/10 rounded-xl my-1 px-4 py-3 flex items-center gap-3 transition-all duration-300"><span class="material-symbols-outlined">logout</span> Sair</button>
+            </div>
+        </aside>
+
+        <!-- Overlay para o menu lateral em modo mobile -->
+        <div id="sidebar-overlay" class="fixed inset-0 bg-black bg-opacity-40 backdrop-blur-sm hidden z-30 lg:hidden"></div>
+
+        <!-- Conteúdo Principal -->
+        <div class="flex-1 w-full lg:w-auto p-4 lg:p-0 overflow-y-auto">
+            <!-- Cabeçalho de Ações e Controles (Obsidian TopNavBar) -->
+            <header class="card lg:rounded-[2rem] p-4 lg:p-6 mb-6 mt-2 lg:mt-0 flex flex-col lg:flex-row items-center justify-between gap-4 bg-surface-container-low border-outline-variant/20 shadow-lg font-['Inter']">
+                <!-- Busca Lateral Esquerda -->
+                <div class="w-full lg:flex-1 flex items-center gap-4">
+                    <button id="sidebar-toggle-btn" class="lg:hidden btn btn-ghost p-2 w-9 h-9 flex-shrink-0 text-on-surface"><span class="material-symbols-outlined">menu</span></button>
+                    <div class="relative w-full lg:max-w-md">
+                        <span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-on-surface-variant text-lg">search</span>
+                        <input type="text" id="search-input" placeholder="Search architecture, properties, or finances..." class="bg-surface-container border-none rounded-full py-2.5 pl-10 pr-4 w-full text-on-surface focus:ring-1 focus:ring-primary placeholder:text-outline text-xs">
+                    </div>
+                </div>
+
+                <!-- Lado Direito Controles e Ações -->
+                <div class="w-full lg:w-auto flex items-center justify-between lg:justify-end gap-3 sm:gap-6">
+                    <!-- Icones Rapidos e Notificacoes -->
+                    <div class="flex items-center gap-4 text-on-surface-variant mr-2">
+                        <!-- Botão Admin Chat transferido pro topo direito -->
+                        <div class="relative">
+                             <span id="admin-chat-btn" class="material-symbols-outlined cursor-pointer hover:text-primary transition-colors">message</span>
+                             <span id="admin-chat-unread-badge" class="absolute -top-1 -right-1 h-2.5 w-2.5 rounded-full bg-error border-2 border-surface hidden"></span>
+                        </div>
+                        <div class="relative">
+                            <span id="notifications-btn" class="material-symbols-outlined cursor-pointer hover:text-primary transition-colors">notifications</span>
+                            <span id="notifications-count-badge" class="absolute -top-1 -right-1 h-3 w-3 rounded-full bg-error text-white text-[8px] flex items-center justify-center hidden"></span>
+                            <div id="notifications-panel" class="absolute right-0 mt-2 w-80 bg-surface-container border border-outline-variant/20 rounded-xl shadow-xl overflow-hidden hidden z-50"></div>
+                        </div>
+                    </div>
+                    <div class="hidden sm:block h-6 w-[1px] bg-outline-variant/30"></div>
+                    <!-- Acões Principais -->
+                    <div class="flex items-center gap-2 sm:gap-3">
+                        <button id="add-guest-btn" class="border border-secondary/40 text-secondary px-3 py-2 rounded-xl text-xs font-bold hover:bg-secondary/10 transition-colors flex items-center gap-1">
+                            <span class="material-symbols-outlined text-sm hidden sm:inline">person_add</span> + Guest
+                        </button>
+                        <button id="add-reservation-btn" class="bg-gradient-to-br from-primary to-primary-container text-on-primary px-4 py-2 rounded-xl text-xs font-bold transition-transform active:scale-95 shadow-lg shadow-primary/10 flex items-center gap-1">
+                            <span class="material-symbols-outlined text-sm hidden sm:inline">event</span> + Reserv.
+                        </button>
+                        <button id="generate-pdf-btn" class="hidden lg:flex border border-outline-variant/30 text-on-surface-variant px-3 py-2 rounded-xl text-xs font-bold hover:bg-surface-variant transition-colors items-center gap-1">
+                            <span class="material-symbols-outlined text-sm">picture_as_pdf</span> PDF
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Calendário Rápido Nav na Linha de Baixo Mobile ou Extrema Direita Desktop -->
+                <div class="w-full lg:w-auto flex justify-center mt-2 lg:mt-0">
+                    <div id="calendar-controls" class="flex items-center gap-1 bg-surface-container px-2 py-1 rounded-full border border-outline-variant/20">
+                        <button id="prev-month-btn" class="btn btn-ghost p-1 h-7 w-7 rounded-full text-on-surface hover:bg-surface-variant"><span class="material-symbols-outlined text-sm">chevron_left</span></button>
+                        <button id="today-btn" class="btn btn-ghost px-2 py-1 h-7 text-[10px] font-bold text-primary uppercase tracking-wider rounded-full hover:bg-surface-variant">Hoje</button>
+                        <h2 id="current-month-year" class="text-xs font-bold w-28 text-center text-on-surface tracking-wide"></h2>
+                        <button id="next-month-btn" class="btn btn-ghost p-1 h-7 w-7 rounded-full text-on-surface hover:bg-surface-variant"><span class="material-symbols-outlined text-sm">chevron_right</span></button>
+                    </div>
+                </div>
+            </header>
+
+            <!-- Container das Visualizações -->
+            <main>
+                <div id="dashboard-view">
+                    <section class="flex justify-between items-end mb-8">
+                        <div>
+                            <h2 class="text-3xl font-extrabold tracking-tight text-on-surface">Inteligência de Portfólio</h2>
+                            <p class="text-on-surface-variant mt-1">Desempenho em tempo real das suas propriedades premium.</p>
+                        </div>
+                        <div class="flex gap-3">
+                            <div class="bg-surface-container-low px-4 py-2 rounded-xl flex items-center gap-2 border border-outline-variant/20">
+                                <span class="w-2 h-2 rounded-full bg-secondary"></span>
+                                <span class="text-xs font-bold text-on-surface-variant">Mercado: Em Alta</span>
+                            </div>
+                        </div>
+                    </section>
+
+                    <div class="grid grid-cols-12 gap-6">
+                        <!-- Main Revenue Chart -->
+                        <div class="col-span-12 lg:col-span-8 bg-surface-container rounded-[2rem] p-8 relative overflow-hidden group border border-outline-variant/10 shadow-[0_8px_32px_-16px_rgba(223,229,250,0.05)]">
+                            <div class="absolute top-0 right-0 p-8">
+                                <span class="text-4xl font-extrabold text-primary-fixed-dim/10 tracking-tighter">RECEITA</span>
+                            </div>
+                            <div class="relative z-10">
+                                <h3 class="text-lg font-bold text-on-surface">Desempenho de Receita</h3>
+                                <p class="text-on-surface-variant text-sm mb-6">Ocupação Diária (Mês Atual)</p>
+                                
+                                <div class="relative h-48 mb-6">
+                                    <canvas id="monthly-trend-chart"></canvas>
+                                </div>
+                                
+                                <div id="dashboard-financial-summary" class="grid grid-cols-3 gap-6 pt-6 border-t border-outline-variant/15">
+                                    <!-- Injetado por JS -->
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Occupancy Quick Glance -->
+                        <div class="col-span-12 lg:col-span-4 flex flex-col gap-6">
+                            <div class="bg-surface-container-high rounded-[2rem] p-8 flex-1 flex flex-col justify-center text-center relative border border-outline-variant/10 shadow-lg">
+                                <h3 class="text-sm font-bold uppercase tracking-widest text-outline absolute top-6 w-full left-0">Taxa de Ocupação</h3>
+                                <div class="relative h-44 w-44 mx-auto mt-6">
+                                     <!-- Canvas do Chart.js que desenhará a Occupancy Doughnut -->
+                                     <canvas id="occupancy-chart"></canvas>
+                                </div>
+                            </div>
+                            <div class="bg-surface-container-highest rounded-[2rem] p-6 flex items-center gap-4 transition-transform hover:scale-[1.02] cursor-pointer border border-outline-variant/10">
+                                <div class="w-12 h-12 rounded-2xl bg-primary-dim/20 flex items-center justify-center text-primary">
+                                    <span class="material-symbols-outlined">analytics</span>
+                                </div>
+                                <div>
+                                    <p class="text-sm font-bold text-on-surface">Resumo de Tendências</p>
+                                    <p class="text-xs text-on-surface-variant">Clique para exibir métricas completas</p>
+                                </div>
+                                <span class="material-symbols-outlined ml-auto text-outline">chevron_right</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Lower Dashboard Grid -->
+                    <div class="grid grid-cols-12 gap-8 mt-6 pb-20">
+                        <!-- Next Events List -->
+                        <div class="col-span-12 lg:col-span-5 space-y-4">
+                            <div class="flex justify-between items-center mb-6">
+                                <h3 class="text-xl font-bold text-on-surface flex items-center gap-2">
+                                    <span class="material-symbols-outlined text-primary">event</span> Próximos Eventos
+                                </h3>
+                            </div>
+                            <!-- Upcoming events container para JS -->
+                            <div id="upcoming-events-container" class="space-y-3 max-h-80 overflow-y-auto hide-scrollbar p-2">
+                                <!-- Injetado por JS -->
+                            </div>
+                        </div>
+
+                        <!-- Properties Gallery / Stats -->
+                        <div class="col-span-12 lg:col-span-7">
+                            <div class="flex justify-between items-center mb-6">
+                                <h3 class="text-xl font-bold text-on-surface">Principais Propriedades (30 dias)</h3>
+                            </div>
+                            <div class="bg-surface-container rounded-[2rem] p-6 border border-outline-variant/10 shadow-lg">
+                                 <div class="relative h-64">
+                                     <canvas id="apartment-occupancy-chart"></canvas>
+                                 </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            <div id="calendar-view" class="lg:card lg:shadow-sm lg:p-0 hidden">
+                <div class="table-responsive overflow-x-auto hidden lg:block">
+                    <div id="calendar-container"></div>
+                </div>
+                <div id="calendar-mobile-container" class="block lg:hidden"></div>
+            </div>
+            <div id="cards-view" class="hidden">
+                <!-- Abas para Reservas Ativas e Tarefas -->
+                <div class="border-b border-outline-variant/20 dark:border-outline-variant/20 mb-4">
+                    <nav class="-mb-px flex space-x-4" aria-label="Tabs">
+                        <button id="active-tab-reservations" class="tab-button tab-reservations active">
+                            <i data-lucide="layout-list" class="w-4 h-4"></i><span>Reservas</span>
+                        </button>
+                        <button id="active-tab-tasks" class="tab-button tab-tasks">
+                            <i data-lucide="wrench" class="w-4 h-4"></i><span>Limpeza / Manutenção</span>
+                        </button>
+                    </nav>
+                </div>
+                <!-- Conteúdo das Abas -->
+                <div id="active-reservations-tab-content" class="tab-content">
+                    <div id="active-reservations-container" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"></div>
+                </div>
+                <div id="active-tasks-tab-content" class="tab-content hidden">
+                    <div id="active-tasks-container" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"></div>
+                </div>
+            </div>
+            <div id="properties-view" class="hidden">
+                <div class="card">
+                    <div class="p-4 sm:p-6">
+                        <h3 class="text-lg font-semibold">Gerenciamento de Propriedades</h3>
+                    </div>
+                    <div class="p-4 sm:p-6 border-t">
+                        <form id="add-property-form" class="flex flex-col sm:flex-row gap-4">
+                            <input type="text" id="new-property-name" placeholder="Nome do novo apartamento (ex: 101, 202B)" class="w-full px-3 py-2 border rounded-md bg-surface-container-high" required aria-label="Nome do novo apartamento">
+                            <button type="submit" class="btn btn-primary">Adicionar Propriedade</button>
+                        </form>
+                    </div>
+                    <div id="properties-list-container" class="p-4 sm:p-6 border-t">
+                    </div>
+                </div>
+            </div>
+            <div id="users-view" class="hidden space-y-6">
+                <div class="card overflow-hidden">
+                    <div class="p-4 sm:p-6 flex justify-between items-center">
+                        <h3 class="text-lg font-semibold">Usuários do Sistema (Admin/Staff)</h3>
+                        <button id="add-user-btn" class="btn btn-primary"><i data-lucide="plus"></i> Adicionar</button>
+                    </div>
+                    <div id="system-users-list-container"></div>
+                </div>
+                <div class="card overflow-hidden">
+                    <div class="p-4 sm:p-6 flex justify-between items-center">
+                        <h3 class="text-lg font-semibold">Usuários Proprietários (Owners)</h3>
+                        <button id="add-owner-btn" class="btn btn-primary"><i data-lucide="plus"></i> Adicionar Proprietário</button>
+                    </div>
+                    <div id="owner-users-list-container"></div>
+                </div>
+            </div>
+            <div id="logs-view" class="hidden">
+                <div class="card overflow-hidden">
+                    <div class="p-4 sm:p-6 border-b">
+                        <h3 class="text-lg font-semibold mb-4">Filtrar Log de Atividades</h3>
+                        <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4 items-end">
+                            <input type="text" id="log-filter-username" placeholder="Nome de usuário" class="w-full px-3 py-2 border rounded-md bg-surface-container-high" aria-label="Filtrar por nome de usuário">
+                            <div>
+                                <label for="log-filter-start-date" class="text-xs text-outline">Data Início</label>
+                                <input type="date" id="log-filter-start-date" class="w-full px-3 py-2 border rounded-md bg-surface-container-high">
+                            </div>
+                            <div>
+                                <label for="log-filter-end-date" class="text-xs text-outline">Data Fim</label>
+                                <input type="date" id="log-filter-end-date" class="w-full px-3 py-2 border rounded-md bg-surface-container-high">
+                            </div>
+                            <div class="flex gap-2"><button id="log-filter-btn" class="btn btn-primary w-full">Filtrar</button><button id="log-clear-filter-btn" class="btn btn-secondary w-full">Limpar</button></div>
+                        </div>
+                    </div>
+                    <div id="logs-container" class="min-h-[300px]">
+                        <!-- Tabela de logs será injetada aqui -->
+                    </div>
+                    <div id="logs-pagination-container" class="p-4 flex justify-center items-center gap-4"></div>
+                </div>
+            </div>
+            <div id="pending-view" class="hidden">
+                <div id="pending-reservations-container"
+                    class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"></div>
+            </div>
+            <div id="approvals-view" class="hidden space-y-6">
+                <div class="flex justify-between items-center">
+                    <h2 class="text-2xl font-bold">Solicitações de Aprovação</h2>
+                </div>
+                <div id="pending-approvals-container"
+                    class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"></div>
+            </div>
+            <div id="guests-view" class="hidden">
+                <div id="guests-list-container" class="card overflow-hidden"></div>
+            </div>
+            <div id="finished-view" class="hidden">
+                <div id="finished-reservations-container" class="card overflow-hidden"></div>
+            </div>
+            <div id="recent-guests-view" class="hidden">
+                <div id="recent-guests-container" class="card overflow-hidden"></div>
+            </div>
+            <div id="employees-view" class="hidden">
+                <div id="employees-list-container" class="card overflow-hidden"></div>
+            </div>
+            <div id="financial-view" class="hidden space-y-6 md:space-y-8">
+                <div>
+                    <h2 id="financial-title" class="text-xl sm:text-2xl font-bold mb-4">Resumo Financeiro</h2>
+                    <div id="financial-summary-container" class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                        <!-- Summary cards will be injected here by JS -->
+                    </div>
+                </div>
+                <div class="card overflow-hidden">
+                    <div class="p-4 sm:p-6">
+                        <h3 class="text-lg font-semibold">Receitas do Mês</h3>
+                    </div>
+                    <div id="financial-reservations-container">
+                        <!-- Reservations table will be injected here by JS -->
+                    </div>
+                </div>
+                <div class="card overflow-hidden">
+                    <div class="p-4 sm:p-6 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
+                        <h3 class="text-lg font-semibold">Despesas do Mês</h3>
+                        <button id="add-expense-btn" class="btn btn-secondary"><i data-lucide="plus"></i> Adicionar Despesa</button>
+                    </div>
+                    <div id="financial-expenses-container">
+                        <!-- Expenses table will be injected here by JS -->
+                    </div>
+                </div>
+            </div>
+            <div id="search-results-view" class="hidden space-y-6">
+                <!-- Os resultados da busca global serão injetados aqui -->
+            </div>
+        </main>
+        </div>
+    </div>
+
+    <!-- Input de arquivo para importação -->
+    <input type="file" id="import-file-input" class="hidden" accept=".json">
+
+    <!-- Modal de Reserva -->
+    <div id="reservation-modal"
+        class="fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center hidden z-50 p-4">
+        <div class="card p-4 sm:p-8 w-full max-w-4xl m-0 sm:m-4 transform transition-all opacity-0 -translate-y-4 max-h-[90vh] overflow-y-auto">
+            <div class="flex justify-between items-center mb-6">
+                <h3 id="modal-title" class="text-2xl font-bold text-on-surface">Nova Reserva</h3>
+                <button id="close-modal-btn" class="btn btn-ghost p-2 rounded-full w-9 h-9"><i
+                        data-lucide="x"></i></button>
+            </div>
+            <form id="reservation-form">
+                <input type="hidden" id="reservation-id">
+                <div class="grid grid-cols-1 lg:grid-cols-2 lg:gap-x-8">
+                    <!-- Coluna da Esquerda -->
+                    <div class="space-y-4">
+                        <div>
+                            <label for="guest-select" class="block text-sm font-medium text-on-surface-variant mb-1">Hóspede
+                                Principal</label>                            
+                            <div class="flex items-center gap-2">
+                                <select id="guest-select" class="w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 bg-surface-container-high" required></select>
+                                <button type="button" id="add-new-guest-from-reservation-btn" class="btn btn-secondary p-2 h-10 w-10 flex-shrink-0" title="Adicionar Novo Hóspede">
+                                    <i data-lucide="user-plus"></i></button>
+                            </div>
+                        </div>
+                        <div>
+                            <label for="apartment-select"
+                                class="block text-sm font-medium text-on-surface-variant mb-1">Apartamento</label>
+                            <select id="apartment-select" 
+                                class="w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 bg-surface-container-high"
+                                required></select>
+                        </div>
+                        <div class="grid grid-cols-2 gap-4">
+                            <div>
+                                <label for="checkin-date"
+                                    class="block text-sm font-medium text-on-surface-variant mb-1">Check-in</label>
+                                <input type="date" id="checkin-date"
+                                    class="w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 bg-surface-container-high"
+                                    required>
+                            </div>
+                            <div>
+                                <label for="checkout-date"
+                                    class="block text-sm font-medium text-on-surface-variant mb-1">Check-out</label>
+                                <input type="date" id="checkout-date"
+                                    class="w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 bg-surface-container-high"
+                                    required>
+                            </div>
+                        </div>
+                        <div class="grid grid-cols-2 gap-4">
+                            <div>
+                                <label for="checkin-time" class="block text-sm font-medium text-on-surface-variant mb-1">Hora
+                                    Entrada</label>
+                                <input type="time" id="checkin-time"
+                                    class="w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 bg-surface-container-high">
+                            </div>
+                            <div>
+                                <label for="checkout-time" class="block text-sm font-medium text-on-surface-variant mb-1">Hora
+                                    Saída</label>
+                                <input type="time" id="checkout-time"
+                                    class="w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 bg-surface-container-high">
+                            </div>
+                        </div>
+                        <div class="grid grid-cols-3 gap-4 border-t pt-4">
+                            <div>
+                                <label for="adults-count"
+                                    class="block text-sm font-medium text-on-surface-variant mb-1">Adultos</label>
+                                <input type="number" id="adults-count" min="1" value="1"
+                                    class="w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 bg-surface-container-high">
+                            </div>
+                            <div>
+                                <label for="children-count"
+                                    class="block text-sm font-medium text-on-surface-variant mb-1">Crianças</label>
+                                <input type="number" id="children-count" min="0" value="0"
+                                    class="w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 bg-surface-container-high">
+                            </div>
+                            <div class="flex flex-col items-start justify-center pt-5">
+                                <label for="pet-included" class="flex items-center gap-2 text-sm font-medium text-on-surface-variant">
+                                    <input type="checkbox" id="pet-included"
+                                        class="h-4 w-4 rounded border-outline-variant/30 text-blue-600 focus:ring-blue-500">
+                                    Pet
+                                </label>
+                            </div>
+                        </div>
+                        <!-- Seção de Hóspedes Adicionais -->
+                        <div id="additional-guests-section" class="hidden space-y-2 border-t pt-4">
+                            <label class="block text-sm font-medium text-on-surface-variant">Hóspedes Adicionais</label>
+                            <div id="additional-guests-list" class="space-y-2"></div>
+                        </div>
+                    </div>
+                    <!-- Coluna da Direita -->
+                    <div class="space-y-4">
+                        <!-- Seção do Veículo -->
+                        <div class="space-y-2 lg:border-t-0 pt-0">
+                            <label class="block text-sm font-medium text-on-surface-variant">
+                                Veículo
+                                <span class="text-xs text-gray-400 font-normal ml-1">(Opcional)</span>
+                            </label>
+                            <div class="grid grid-cols-2 gap-4">
+                                <input type="text" id="vehicle-model" placeholder="Modelo"
+                                    class="w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 bg-surface-container-high">
+                                <input type="text" id="vehicle-type" placeholder="Tipo (Carro, Moto)"
+                                    class="w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 bg-surface-container-high">
+                                <input type="text" id="vehicle-plate" placeholder="Matrícula"
+                                    class="w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 bg-surface-container-high">
+                                <input type="text" id="vehicle-color" placeholder="Cor"
+                                    class="w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 bg-surface-container-high">
+                            </div>
+                        </div>
+                        <div>
+                            <label for="reservation-notes" class="block text-sm font-medium text-on-surface-variant mb-1">Observações</label>
+                            <textarea id="reservation-notes" rows="2" placeholder="Ex: Pedido especial do hóspede, informações adicionais..."
+                                class="w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 bg-surface-container-high"></textarea>
+                        </div>
+                        <div>
+                            <label for="status-select" class="block text-sm font-medium text-on-surface-variant mb-1">Status</label>
+                            <select id="status-select" 
+                                class="w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 bg-surface-container-high"
+                                required>
+                                <option value="pending-approval">Aguardando Aprovação</option>
+                                <option value="pending">Pendente</option>
+                                <option value="confirmed">Confirmada</option>
+                                <option value="checked-in">Check-in</option>
+                                <option value="canceled">Cancelada</option>
+                                <option value="finished">Finalizada</option>
+                                <option value="maintenance">Manutenção</option>
+                                <option value="blocked">Bloqueado</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label for="platform-select" class="block text-sm font-medium text-on-surface-variant mb-1">Plataforma de Origem</label>
+                            <select id="platform-select" class="w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 bg-surface-container-high">
+                                <option value="direct">Direto / Telefone</option>
+                                <option value="airbnb">Airbnb</option>
+                                <option value="booking">Booking.com</option>
+                                <option value="owner">Uso do Proprietário</option>
+                                <option value="other">Outra</option>
+                            </select>
+                        </div>
+                        <!-- Seção Financeira -->
+                        <div class="grid grid-cols-2 gap-4 border-t pt-4">
+                            <div>
+                                <label for="reservation-price" class="block text-sm font-medium text-on-surface-variant mb-1">Valor (R$)</label>
+                                <input type="number" id="reservation-price" step="0.01" min="0" placeholder="Ex: 450.50" class="w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 bg-surface-container-high">
+                            </div>
+                            <div>
+                                <label for="payment-status-select" class="block text-sm font-medium text-on-surface-variant mb-1">Pagamento</label>
+                                <select id="payment-status-select" class="w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 bg-surface-container-high">
+                                    <option value="pending">Pendente</option>
+                                    <option value="partial">Parcial</option>
+                                    <option value="paid">Pago</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="flex justify-between items-center mt-8">
+                    <div class="flex gap-2">
+                        <button type="button" id="cancel-reservation-btn" class="btn hidden"
+                            style="background-color: var(--brand-yellow); color: white;">
+                            <i data-lucide="ban"></i> Cancelar Reserva
+                        </button>
+                        <button type="button" id="delete-reservation-btn" class="btn btn-danger hidden">
+                            <i data-lucide="trash-2"></i> Excluir
+                        </button>
+                    </div>
+
+                    <div class="flex gap-2">
+                        <button type="button" id="cancel-btn" class="btn btn-secondary"><i data-lucide="x-circle"
+                                class="w-4 h-4"></i> Cancelar</button>
+                        <button type="submit" class="btn btn-primary"><i data-lucide="save" class="w-4 h-4"></i>
+                            Salvar</button>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Modal de Hóspede -->
+    <div id="guest-modal" class="fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center hidden z-50 p-4">
+        <div class="card p-8 w-full max-w-md m-4 transform transition-all opacity-0 -translate-y-4">
+            <div class="flex justify-between items-center mb-6">
+                <h3 id="guest-modal-title" class="text-2xl font-bold text-on-surface">Novo Hóspede</h3>
+                <button id="close-guest-modal-btn" class="btn btn-ghost p-2 rounded-full w-9 h-9"><i
+                        data-lucide="x"></i></button>
+            </div>
+            <form id="guest-form">
+                <input type="hidden" id="guest-id">
+                <div class="space-y-4">
+                    <div class="flex flex-col items-center space-y-2">
+                        <img id="guest-photo-preview" src="https://placehold.co/128" alt="Foto do Hóspede" class="w-24 h-24 rounded-full object-cover border-4 border-outline-variant/20 border-outline-variant/20">
+                        <input type="file" id="guest-photo-upload" class="hidden" accept="image/*">
+                        <button type="button" id="guest-photo-upload-btn" class="btn btn-secondary text-sm !py-1 !px-3">Trocar Foto</button>
+                    </div>
+
+                    <div>
+                        <label for="guest-name" class="block text-sm font-medium text-on-surface-variant mb-1">Nome Completo</label>
+                        <div class="relative">
+                            <input type="text" id="guest-name"
+                                class="w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 bg-surface-container-high"
+                                required autocomplete="off">
+                            <div id="guest-suggestions-list" class="absolute z-20 w-full bg-surface-container bg-surface-container border border-outline-variant/30 border-outline-variant/20 rounded-md mt-1 hidden max-h-40 overflow-y-auto shadow-lg"></div>
+                        </div>
+                        <p id="existing-guest-info" class="text-sm text-green-600 mt-1 hidden">Dados de hóspede existente carregados. Salvar irá atualizar o cadastro.</p>
+                    </div>
+                    <div>
+                        <label for="guest-phone" class="block text-sm font-medium text-on-surface-variant mb-1">Telefone</label>
+                        <input type="tel" id="guest-phone" required
+                            class="w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 bg-surface-container-high">
+                    </div>
+                    <div>
+                        <label for="guest-email" class="block text-sm font-medium text-on-surface-variant mb-1">E-mail</label>
+                        <input type="email" id="guest-email" 
+                            class="w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 bg-surface-container-high">
+                    </div>
+                    <div>
+                        <label for="guest-doc" class="block text-sm font-medium text-on-surface-variant mb-1">Documento (CPF/Passaporte)</label>
+                        <input type="text" id="guest-doc" required
+                            class="w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 bg-surface-container-high">
+                    </div>
+                    <div>
+                        <label for="guest-notes" class="block text-sm font-medium text-on-surface-variant mb-1">Observações</label>
+                        <textarea id="guest-notes" 
+                            class="w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 bg-surface-container-high"
+                            rows="3"></textarea>
+                    </div>
+                </div>
+                <div class="flex justify-end items-center mt-8">
+                    <div class="flex gap-2">
+                        <button type="button" id="cancel-guest-btn" class="btn btn-secondary"><i
+                                data-lucide="x-circle" class="w-4 h-4"></i> Cancelar</button>
+                        <button type="submit" class="btn btn-primary"><i data-lucide="save" class="w-4 h-4"></i> Salvar
+                            Hóspede</button>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Modal de Funcionário -->
+    <div id="employee-modal" class="fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center hidden z-50 p-4">
+        <div class="card p-8 w-full max-w-md m-4 transform transition-all opacity-0 -translate-y-4">
+            <div class="flex justify-between items-center mb-6">
+                <h3 id="employee-modal-title" class="text-2xl font-bold text-on-surface">Novo Funcionário</h3>
+                <button id="close-employee-modal-btn" class="btn btn-ghost p-2 rounded-full w-9 h-9"><i data-lucide="x"></i></button>
+            </div>
+            <form id="employee-form">
+                <input type="hidden" id="employee-id">
+                <div class="space-y-4">
+                    <div>
+                        <label for="employee-name" class="block text-sm font-medium text-on-surface-variant mb-1">Nome Completo</label>
+                        <input type="text" id="employee-name" class="w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 bg-surface-container-high" required>
+                    </div>
+                    <div>
+                        <label for="employee-role" class="block text-sm font-medium text-on-surface-variant mb-1">Cargo</label>
+                        <input type="text" id="employee-role" placeholder="Ex: Gerente, Limpeza" class="w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 bg-surface-container-high" required>
+                    </div>
+                    <div>
+                        <label for="employee-phone" class="block text-sm font-medium text-on-surface-variant mb-1">Telefone</label>
+                        <input type="tel" id="employee-phone" class="w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 bg-surface-container-high" required>
+                    </div>
+                    <div>
+                        <label for="employee-doc" class="block text-sm font-medium text-on-surface-variant mb-1">Documento (CPF)</label>
+                        <input type="text" id="employee-doc" class="w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 bg-surface-container-high" required>
+                    </div>
+                </div>
+                <div class="flex justify-end items-center mt-8">
+                    <div class="flex gap-2">
+                        <button type="button" id="cancel-employee-btn" class="btn btn-secondary"><i data-lucide="x-circle" class="w-4 h-4"></i> Cancelar</button>
+                        <button type="submit" class="btn btn-primary"><i data-lucide="save" class="w-4 h-4"></i> Salvar</button>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Modal de Detalhes do Apartamento -->
+    <div id="apartment-details-modal" class="fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center hidden z-50 p-4">
+        <div class="card p-8 w-full max-w-2xl m-4 transform transition-all opacity-0 -translate-y-4 max-h-[90vh] overflow-y-auto hide-scrollbar">
+            <div class="flex justify-between items-center mb-6">
+                <h3 id="apartment-details-title" class="text-2xl font-bold text-on-surface">Detalhes de Ocupação</h3>
+                <button id="close-apartment-details-modal-btn" class="btn btn-ghost p-2 rounded-full w-9 h-9"><i data-lucide="x"></i></button>
+            </div>
+            <!-- Abas -->
+            <div class="border-b border-outline-variant/20 dark:border-outline-variant/20 mb-4">
+                <nav class="-mb-px flex space-x-4" aria-label="Tabs">
+                    <button id="tab-reservations" class="tab-button tab-reservations active">
+                        <i data-lucide="calendar-days" class="w-4 h-4"></i><span>Histórico de Reservas</span>
+                    </button>
+                    <button id="tab-tasks" class="tab-button tab-tasks">
+                        <i data-lucide="clipboard-list" class="w-4 h-4"></i><span>Histórico de Tarefas</span>
+                    </button>
+                </nav>
+            </div>
+            <!-- Conteúdo das Abas -->
+            <div id="apartment-details-reservations-content" class="tab-content"></div>
+            <div id="apartment-details-tasks-content" class="tab-content hidden"></div>
+        </div>
+    </div>
+
+    <!-- Modal de Configurações -->
+    <div id="settings-modal" class="fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center hidden z-50 p-4">
+        <div class="card p-8 w-full max-w-md m-4 transform transition-all opacity-0 -translate-y-4">
+            <div class="flex justify-between items-center mb-6">
+                <h3 class="text-2xl font-bold text-on-surface">Configurações</h3>
+                <button id="close-settings-modal-btn" class="btn btn-ghost p-2 rounded-full w-9 h-9"><i data-lucide="x"></i></button>
+            </div>
+            <div class="space-y-4">
+                <h4 class="text-lg font-semibold text-on-surface">Gerenciamento de Dados</h4>
+                <p class="text-sm text-outline">Exporte todos os seus dados para um arquivo de backup ou importe um backup para restaurar suas informações.</p>
+                <div class="flex flex-col sm:flex-row gap-3 pt-2">
+                    <button id="export-data-btn" class="btn btn-secondary w-full"><i data-lucide="download"></i> Exportar Dados</button>
+                    <button id="import-data-btn" class="btn btn-secondary w-full"><i data-lucide="upload"></i> Importar Dados</button>
+                </div>
+                <div class="border-t my-6"></div>
+                <h4 class="text-lg font-semibold text-on-surface">Recuperação de Emergência</h4>
+                <p class="text-sm text-outline">Restaure a versão mais recente dos seus dados salva automaticamente pelo sistema. Use esta opção com cuidado.</p>
+                <div class="pt-2">
+                     <button id="restore-auto-backup-btn" class="btn btn-danger w-full"><i data-lucide="history"></i> Restaurar Último Backup</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal de Tarefas (Limpeza, Manutenção, Bloqueio) -->
+    <div id="task-modal" class="fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center hidden z-50 p-4">
+        <div class="card p-8 w-full max-w-md m-4 transform transition-all opacity-0 -translate-y-4">
+            <div class="flex justify-between items-center mb-6">
+                <h3 id="task-modal-title" class="text-2xl font-bold text-on-surface">Nova Tarefa</h3>
+                <button id="close-task-modal-btn" class="btn btn-ghost p-2 rounded-full w-9 h-9"><i data-lucide="x"></i></button>
+            </div>
+            <form id="task-form">
+                <input type="hidden" id="task-id">
+                <input type="hidden" id="task-type">
+                <div class="space-y-4">
+                    <div>
+                        <label for="task-apartment-select" class="block text-sm font-medium text-on-surface-variant mb-1">Apartamento</label>
+                        <select id="task-apartment-select" class="w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 bg-surface-container-high" required></select>
+                    </div>
+                    <div class="grid grid-cols-2 gap-4">
+                        <div>
+                            <label for="task-start-date" class="block text-sm font-medium text-on-surface-variant mb-1">Data Início</label>
+                            <input type="date" id="task-start-date" class="w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 bg-surface-container-high" required>
+                        </div>
+                        <div>
+                            <label for="task-end-date" class="block text-sm font-medium text-on-surface-variant mb-1">Data Fim</label>
+                            <input type="date" id="task-end-date" class="w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 bg-surface-container-high" required>
+                        </div>
+                    </div>
+                    <div class="grid grid-cols-2 gap-4">
+                        <div>
+                            <label for="task-start-time" class="block text-sm font-medium text-on-surface-variant mb-1">Hora Início</label>
+                            <input type="time" id="task-start-time" class="w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 bg-surface-container-high">
+                        </div>
+                        <div>
+                            <label for="task-end-time" class="block text-sm font-medium text-on-surface-variant mb-1">Hora Fim</label>
+                            <input type="time" id="task-end-time" class="w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 bg-surface-container-high">
+                        </div>
+                    </div>
+                    <!-- Campos específicos de Manutenção -->
+                    <div id="maintenance-fields" class="hidden space-y-4 border-t pt-4">
+                        <input type="text" id="task-service-type" placeholder="Tipo de Serviço (Ex: Reparo ar-condicionado)" class="w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 bg-surface-container-high">
+                        <input type="text" id="task-company" placeholder="Empresa/Responsável (Ex: EletroFrio)" class="w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 bg-surface-container-high">
+                    </div>
+                    <!-- Campos específicos de Limpeza -->
+                    <div id="cleaning-fields" class="hidden space-y-4 border-t pt-4">
+                        <input type="text" id="task-provider" placeholder="Nome do Prestador (Opcional)" class="w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 bg-surface-container-high">
+                    </div>
+                    <!-- Campos específicos de Bloqueio -->
+                    <div id="blocking-fields" class="hidden space-y-4 border-t pt-4">
+                        <textarea id="task-reason" rows="2" placeholder="Motivo do Bloqueio (Ex: Reforma do banheiro)" class="w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 bg-surface-container-high"></textarea>
+                    </div>
+                </div>
+                <div class="flex justify-end items-center mt-8">
+                    <div class="flex gap-2">
+                        <button type="button" id="cancel-task-btn" class="btn btn-secondary"><i data-lucide="x-circle" class="w-4 h-4"></i> Cancelar</button>
+                        <button type="submit" class="btn btn-primary"><i data-lucide="save" class="w-4 h-4"></i> Salvar Tarefa</button>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Modal de Despesa -->
+    <div id="expense-modal" class="fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center hidden z-50 p-4">
+        <div class="card p-8 w-full max-w-md m-4 transform transition-all opacity-0 -translate-y-4">
+            <div class="flex justify-between items-center mb-6">
+                <h3 id="expense-modal-title" class="text-2xl font-bold text-on-surface">Nova Despesa</h3>
+                <button id="close-expense-modal-btn" class="btn btn-ghost p-2 rounded-full w-9 h-9"><i data-lucide="x"></i></button>
+            </div>
+            <form id="expense-form">
+                <input type="hidden" id="expense-id">
+                <div class="space-y-4">
+                    <div>
+                        <label for="expense-description" class="block text-sm font-medium text-on-surface-variant mb-1">Descrição</label>
+                        <input type="text" id="expense-description" class="w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 bg-surface-container-high" required>
+                    </div>
+                    <div class="grid grid-cols-2 gap-4">
+                        <div>
+                            <label for="expense-amount" class="block text-sm font-medium text-on-surface-variant mb-1">Valor (R$)</label>
+                            <input type="number" id="expense-amount" step="0.01" min="0" placeholder="Ex: 50.00" class="w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 bg-surface-container-high" required>
+                        </div>
+                        <div>
+                            <label for="expense-date" class="block text-sm font-medium text-on-surface-variant mb-1">Data</label>
+                            <input type="date" id="expense-date" class="w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 bg-surface-container-high" required>
+                        </div>
+                    </div>
+                    <div>
+                        <label for="expense-category" class="block text-sm font-medium text-on-surface-variant mb-1">Categoria</label>
+                        <input type="text" id="expense-category" placeholder="Ex: Limpeza, Manutenção, Contas" class="w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 bg-surface-container-high">
+                    </div>
+                </div>
+                <div class="flex justify-between items-center mt-8">
+                    <button type="button" id="delete-expense-btn" class="btn hidden" style="background-color: transparent; color: var(--brand-red); border-color: var(--brand-red);">
+                        <i data-lucide="trash-2"></i> Excluir
+                    </button>
+                    <div class="flex gap-2">
+                        <button type="button" id="cancel-expense-btn" class="btn btn-secondary"><i data-lucide="x-circle" class="w-4 h-4"></i> Cancelar</button>
+                        <button type="submit" class="btn btn-primary"><i data-lucide="save" class="w-4 h-4"></i> Salvar Despesa</button>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Modal de Usuário -->
+    <div id="user-modal" class="fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center hidden z-50 p-4">
+        <div class="card p-8 w-full max-w-md m-4 transform transition-all opacity-0 -translate-y-4">
+            <div class="flex justify-between items-center mb-6">
+                <h3 id="user-modal-title" class="text-2xl font-bold text-on-surface">Novo Usuário</h3>
+                <button id="close-user-modal-btn" class="btn btn-ghost p-2 rounded-full w-9 h-9"><i data-lucide="x"></i></button>
+            </div>
+            <form id="user-form">
+                <input type="hidden" id="user-id">
+                <div class="space-y-4">
+                    <div>
+                        <label for="user-username" class="block text-sm font-medium text-on-surface-variant mb-1">Nome de Usuário</label>
+                        <input type="text" id="user-username" class="w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 bg-surface-container-high" required>
+                    </div>
+                    <div>
+                        <label for="user-password" class="block text-sm font-medium text-on-surface-variant mb-1">Senha</label>
+                        <input type="password" id="user-password" autocomplete="new-password" class="w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 bg-surface-container-high" required>
+                    </div>
+                    <div>
+                        <label for="user-role-select" class="block text-sm font-medium text-on-surface-variant mb-1">Função</label>
+                        <select id="user-role-select" class="w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 bg-surface-container-high" required>
+                            <option value="staff">Padrão (Staff)</option>
+                            <option value="owner">Proprietário (Owner)</option>
+                            <option value="admin">Administrador (Admin)</option>
+                        </select>
+                    </div>
+                    <div id="user-apartment-field" class="hidden">
+                        <label for="user-apartments-input" class="block text-sm font-medium text-on-surface-variant mb-1">Apartamentos (separe por vírgula)</label>
+                        <input type="text" id="user-apartments-input" placeholder="Ex: 304, 305, 402" class="w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 bg-surface-container-high">
+                    </div>
+                </div>
+                <div class="flex justify-end items-center mt-8"><button type="submit" class="btn btn-primary"><i data-lucide="save" class="w-4 h-4"></i> Salvar Usuário</button></div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Modal de Edição de Propriedade -->
+    <div id="property-edit-modal" class="fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center hidden z-50 p-4">
+        <div class="card p-8 w-full max-w-lg m-4 transform transition-all opacity-0 -translate-y-4">
+            <div class="flex justify-between items-center mb-6">
+                <h3 id="property-edit-modal-title" class="text-2xl font-bold">Editar Propriedade</h3>
+                <button id="close-property-edit-modal-btn" class="btn btn-ghost p-2 rounded-full w-9 h-9"><i data-lucide="x"></i></button>
+            </div>
+            <form id="property-edit-form">
+                <input type="hidden" id="property-edit-id">
+                <div class="space-y-4">
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        <div>
+                            <label for="property-edit-name" class="block text-sm font-medium text-on-surface-variant mb-1">Nome do Apartamento</label>
+                            <input type="text" id="property-edit-name" class="w-full px-3 py-2 border rounded-md bg-surface-container-high" required>
+                        </div>
+                        <div>
+                            <label for="property-edit-capacity" class="block text-sm font-medium text-on-surface-variant mb-1">Capacidade (Pessoas)</label>
+                            <input type="number" id="property-edit-capacity" min="1" class="w-full px-3 py-2 border rounded-md bg-surface-container-high">
+                        </div>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-on-surface-variant mb-2">Amenidades</label>
+                        <div id="amenities-toggle-container" class="flex flex-wrap gap-3">
+                            <button type="button" class="amenity-toggle" data-amenity="wifi">Wi-Fi</button>
+                            <button type="button" class="amenity-toggle" data-amenity="tv">TV</button>
+                            <button type="button" class="amenity-toggle" data-amenity="airConditioning">Ar Cond.</button>
+                            <button type="button" class="amenity-toggle" data-amenity="cooktop">Cooktop</button>
+                            <button type="button" class="amenity-toggle" data-amenity="microwave">Micro-ondas</button>
+                            <button type="button" class="amenity-toggle" data-amenity="fireAlarm">Alarme Incêndio</button>
+                        </div>
+                    </div>
+                </div>
+                <div class="flex justify-end items-center mt-8">
+                    <div class="flex gap-2">
+                        <button type="button" id="cancel-property-edit-btn" class="btn btn-secondary"><i data-lucide="x-circle" class="w-4 h-4"></i> Cancelar</button>
+                        <button type="submit" class="btn btn-primary"><i data-lucide="save" class="w-4 h-4"></i> Salvar Alterações</button>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Modal de Chat -->
+    <div id="chat-modal" class="fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center hidden z-50 p-4">
+        <div class="card w-full max-w-lg h-[70vh] flex flex-col transform transition-all opacity-0 -translate-y-4">
+            <div class="p-4 border-b flex justify-between items-center flex-shrink-0 gap-4">
+                <h3 id="chat-modal-title" class="text-lg font-bold">Conversa</h3>
+                <div class="flex items-center">
+                    <button id="clear-current-chat-btn" class="btn btn-ghost p-2 rounded-full w-9 h-9 text-red-500 hidden" title="Limpar histórico desta conversa"><i data-lucide="trash-2"></i></button>
+                    <button id="close-chat-modal-btn" class="btn btn-ghost p-2 rounded-full w-9 h-9"><i data-lucide="x"></i></button>
+                </div>
+            </div>
+            <div id="chat-messages-container" class="flex-grow p-4 space-y-4 overflow-y-auto">
+                <!-- Mensagens serão injetadas aqui -->
+            </div>
+            <div class="p-4 border-t flex-shrink-0">
+                <div id="chat-recording-indicator" class="hidden items-center gap-2 text-sm text-red-500 mb-2">
+                    <i data-lucide="mic" class="w-4 h-4 animate-pulse"></i>
+                    <span>Gravando...</span>
+                    <span id="chat-recording-timer">00:00</span>
+                </div>
+                <form id="chat-form" class="flex items-center gap-2">
+                    <input type="file" id="chat-file-input" class="hidden" accept="image/*,.pdf,.doc,.docx,audio/*">
+                    <input type="hidden" id="chat-partner-username">
+                     <button type="button" id="chat-attach-file-btn" class="btn btn-secondary px-3" title="Anexar arquivo"><i data-lucide="paperclip"></i></button>
+                     <input type="text" id="chat-message-input" placeholder="Digite sua mensagem..." class="w-full px-3 py-2 border rounded-md bg-surface-container-high" required autocomplete="off">
+                    <!-- Botões de Ação -->
+                    <button type="button" id="chat-record-btn" class="btn btn-secondary px-3" title="Gravar Áudio"><i data-lucide="mic"></i></button>
+                    <button type="submit" id="chat-send-btn" class="btn btn-primary px-4" title="Enviar Mensagem"><i data-lucide="send"></i></button>
+                </form>
+                <p id="chat-file-name" class="text-xs text-outline mt-1 truncate"></p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal de Lista de Chats (Admin) -->
+    <div id="chat-list-modal" class="fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center hidden z-50 p-4">
+        <div class="card w-full max-w-md h-auto max-h-[70vh] flex flex-col transform transition-all opacity-0 -translate-y-4">
+            <div class="p-3 border-b flex justify-between items-center flex-shrink-0">
+                <h3 class="text-lg font-bold">Conversas</h3>
+                <button id="close-chat-list-modal-btn" class="btn btn-ghost p-2 rounded-full w-9 h-9"><i data-lucide="x"></i></button>
+            </div>
+            <div class="p-2 border-b">
+                <div class="relative">
+                    <i data-lucide="search" class="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400"></i>
+                    <input type="text" id="chat-list-search" placeholder="Buscar proprietário..." class="w-full pl-10 pr-4 py-2 border rounded-md bg-surface-container-high text-sm">
+                </div>
+            </div>
+            <div id="chat-list-container" class="flex-grow p-2 space-y-1 overflow-y-auto">
+                <p class="p-4 text-center text-outline">Nenhum proprietário encontrado.</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal de Visualização de Arquivo -->
+    <div id="file-viewer-modal" class="fixed inset-0 bg-black bg-opacity-70 flex items-center justify-center hidden z-[60] p-4">
+        <div class="card w-full max-w-4xl h-auto max-h-[90vh] flex flex-col transform transition-all opacity-0 -translate-y-4">
+            <div class="p-3 border-b flex justify-between items-center flex-shrink-0">
+                <h3 id="file-viewer-title" class="text-lg font-bold truncate">Visualizar Arquivo</h3>
+                <div class="flex items-center gap-2">
+                    <a id="file-viewer-download-btn" href="#" download class="btn btn-secondary" title="Baixar Arquivo">
+                        <i data-lucide="download"></i>
+                        <span class="hidden sm:inline">Baixar</span>
+                    </a>
+                    <button id="file-viewer-fullscreen-btn" class="btn btn-secondary hidden" title="Tela Cheia">
+                        <i data-lucide="maximize"></i>
+                    </button>
+                    <button id="file-viewer-close-btn" class="btn btn-ghost p-2 rounded-full w-9 h-9"><i data-lucide="x"></i></button>
+                </div>
+            </div>
+            <div id="file-viewer-content" class="flex-grow p-4 flex items-center justify-center overflow-auto">
+                <!-- Conteúdo do arquivo (imagem ou ícone) será injetado aqui -->
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal de Alterar Senha -->
+    <div id="change-password-modal" class="fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center hidden z-50 p-4">
+        <div class="card p-8 w-full max-w-md m-4 transform transition-all opacity-0 -translate-y-4">
+            <div class="flex justify-between items-center mb-6">
+                <h3 class="text-2xl font-bold">Alterar Senha</h3>
+                <button id="close-change-password-modal-btn" class="btn btn-ghost p-2 rounded-full w-9 h-9"><i data-lucide="x"></i></button>
+            </div>
+            <form id="change-password-form">
+                <div class="space-y-4">
+                    <div>
+                        <label for="current-password" class="block text-sm font-medium text-on-surface-variant mb-1">Senha Atual</label>
+                        <input type="password" id="current-password" autocomplete="current-password" class="w-full px-3 py-2 border rounded-md bg-surface-container-high" required>
+                    </div>
+                    <div>
+                        <label for="new-password" class="block text-sm font-medium text-on-surface-variant mb-1">Nova Senha</label>
+                        <input type="password" id="new-password" autocomplete="new-password" class="w-full px-3 py-2 border rounded-md bg-surface-container-high" required>
+                    </div>
+                    <div>
+                        <label for="confirm-password" class="block text-sm font-medium text-on-surface-variant mb-1">Confirmar Nova Senha</label>
+                        <input type="password" id="confirm-password" autocomplete="new-password" class="w-full px-3 py-2 border rounded-md bg-surface-container-high" required>
+                    </div>
+                </div>
+                <div class="flex justify-end items-center mt-8">
+                    <button type="submit" class="btn btn-primary"><i data-lucide="save" class="w-4 h-4"></i> Salvar Nova Senha</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+
+
+    <!-- Modais Customizados (Alert/Confirm) -->
+    <div id="custom-modal-container"
+        class="fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center hidden z-50 p-4">
+        <div class="card p-6 w-full max-w-sm m-4 text-center">
+            <h3 id="custom-modal-title" class="text-xl font-bold mb-2"></h3>
+            <p id="custom-modal-message" class="text-on-surface-variant mb-6"></p>
+            <div id="custom-modal-buttons" class="flex justify-center gap-4"></div>
+        </div>
+    </div>
+
+    <!-- Contêiner para Notificações (Toasts) -->
+    <div id="toast-container" class="fixed top-6 right-6 z-50 space-y-3 w-80"></div>
+
+    <!-- O script principal da aplicação agora é carregado como um módulo -->
+    <!-- Carrega o cliente Socket.IO de um CDN, que é a abordagem correta para frontend e backend separados -->
+    <script src="https://cdn.socket.io/4.7.5/socket.io.min.js"></script>
+    <script type="module" src="js/pdfGenerator.js"></script>
+    <script type="module" src="js/chat.js"></script>
+    <script type="module" src="js/events.js"></script>
+    <script type="module" src="js/main.js"></script>
+
+    <script>
+        // Registra o Service Worker para funcionalidades PWA
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('/sw.js').then(registration => {
+                    console.log('ServiceWorker registrado com sucesso: ', registration.scope);
+                }).catch(error => {
+                    console.log('Falha ao registrar o ServiceWorker: ', error);
+                });
+            });
+        }
+    </script>
+</body>
+
+</html>     

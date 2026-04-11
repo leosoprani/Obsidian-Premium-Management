@@ -1,0 +1,46 @@
+# Redesign Mobile "Obsidian Premium"
+
+Este walkthrough detalha a modernização completa da interface mobile do aplicativo, aplicando uma estética minimalista, elegante e de alta performance (estilo Apple) em todos os fluxos de Admin e Proprietário.
+
+## ✨ Destaques da Renovação
+
+> [!TIP]
+> A nova interface utiliza uma paleta de cores curada em tons de cinza profundo e azul elétrico, eliminando elementos visuais desnecessários para focar no que importa: os dados e a facilidade de uso.
+
+### 1. Sistema de Design Centralizado
+- **`mobile/src/styles/theme.js`**: Agora todos os componentes consomem um único objeto de tema, garantindo que bordas, cores de fundo (`#000`), tipografia e espaçamentos sejam idênticos em todo o app.
+
+### 2. Portal do Administrador
+- **Dashboard Console**: Cards de KPI (Key Performance Indicators) redesenhados com micro-interações.
+- **Gestão de Usuários e Reservas**: Listas limpas com badges de status coloridos e legíveis.
+- **Relatórios e Logs**: Interface otimizada para leitura de grandes volumes de dados em telas pequenas.
+
+### 3. Portal do Proprietário
+- **Feed de Reservas**: Cards elegantes que mostram o essencial de relance.
+- **Calendário de Ocupação**: Tema dark moderno integrado com pontos de status coloridos.
+- **Chat de Suporte**: Bolhas de mensagem redesenhadas e campo de input minimalista.
+- **Perfil & Segurança**: Seção de configurações simplificada, facilitando a troca de senha e logout.
+
+### 4. Modais e Formulários
+- **Responsividade**: Todos os modais (`AddGuest`, `RequestReservation`, `AdminAddUser`) agora usam `KeyboardAvoidingView` e `BlurView` para uma experiência nativa e fluida.
+- **Autocomplete**: Busca de hóspedes aprimorada para agilizar novas reservas.
+
+---
+
+## 📸 Screenshots & Mockups
+
+````carousel
+![Dashboard Minimalista](file:///C:/Users/rafae/.gemini/antigravity/brain/3f7daa0b-d754-48c5-95c4-15a2d1c91436/mobile_minimalist_dashboard_mockup_1775588510142.png)
+<!-- slide -->
+![Login Premium](file:///C:/Users/rafae/.gemini/antigravity/brain/3f7daa0b-d754-48c5-95c4-15a2d1c91436/mobile_minimalist_login_mockup_1775588486697.png)
+````
+
+---
+
+## 🛠️ Validação Técnica
+- **Estilo**: CSS Vanilla via `StyleSheet.create`.
+- **Componentes**: Uso sistemático de `LinearGradient`, `Ionicons` e `SafeAreaView`.
+- **Performance**: Redução de renderizações desnecessárias e remoção de `BlurView` excessivos em listas longas.
+
+> [!IMPORTANT]
+> O arquivo `mobile/src/services/api.js` está configurado com o IP local `192.168.1.9`. Caso o servidor não responda, verifique se o IP da máquina de desenvolvimento mudou e atualize este arquivo.
