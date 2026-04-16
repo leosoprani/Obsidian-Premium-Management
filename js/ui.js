@@ -671,6 +671,8 @@ export function renderPendingReservations(reservations, guests) {
  * @param {Array} reservations - Array de todas as reservas.
  * @param {Array} guests - Array de todos os hóspedes.
  */
+export function renderFinishedReservations(reservations, guests) {
+    const container = document.getElementById('finished-reservations-container');
     if (!Array.isArray(reservations)) {
         container.innerHTML = `<p class="text-outline p-4 text-center">Dados de reservas inválidos.</p>`;
         return;
