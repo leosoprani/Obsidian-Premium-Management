@@ -137,29 +137,48 @@ export default function RequestReservationModal({ visible, onClose, initialData,
     return formatDateBR(dateStr);
   };
 
-  const DatePickerModal = ({ visible, value, onChange, onClose, title }) => (
-    <Modal visible={visible} transparent animationType="fade">
-      <View style={styles.calendarOverlay}>
-        <View style={[styles.calendarCard, { backgroundColor: activeTheme.colors.surface, borderColor: activeTheme.colors.glassBorder }]}>
-          <Text style={[styles.calendarTitle, { color: activeTheme.colors.text }]}>{title}</Text>
-          <DateTimePicker
-            value={value}
-            mode="date"
-            display={Platform.OS === 'ios' ? 'inline' : 'default'}
-            onChange={onChange}
-            minimumDate={title === 'DATA DE CHECK-OUT' ? tempStartDate : new Date()}
-            themeVariant="dark"
-            textColor="#ffffff"
-          />
-          <TouchableOpacity style={styles.calendarDoneBtn} onPress={onClose}>
-            <LinearGradient colors={[activeTheme.colors.primary, '#0055ff']} style={styles.calendarDoneGrad}>
-              <Text style={styles.calendarDoneText}>CONFIRMAR DATA</Text>
-            </LinearGradient>
-          </TouchableOpacity>
+  const DatePickerModal = ({ visible, value, onChange, onClose, title }) => {
+    if (!visible) return null;
+
+    if (Platform.OS === 'android') {
+      return (
+        <DateTimePicker
+          value={value}
+          mode="date"
+          display="default"
+          onChange={(e, d) => {
+            onClose();
+            if (d) onChange(e, d);
+          }}
+          minimumDate={title === 'DATA DE CHECK-OUT' ? tempStartDate : new Date()}
+        />
+      );
+    }
+
+    return (
+      <Modal visible={visible} transparent animationType="fade">
+        <View style={styles.calendarOverlay}>
+          <View style={[styles.calendarCard, { backgroundColor: activeTheme.colors.surface, borderColor: activeTheme.colors.glassBorder }]}>
+            <Text style={[styles.calendarTitle, { color: activeTheme.colors.text }]}>{title}</Text>
+            <DateTimePicker
+              value={value}
+              mode="date"
+              display="inline"
+              onChange={onChange}
+              minimumDate={title === 'DATA DE CHECK-OUT' ? tempStartDate : new Date()}
+              themeVariant="dark"
+              textColor="#ffffff"
+            />
+            <TouchableOpacity style={styles.calendarDoneBtn} onPress={onClose}>
+              <LinearGradient colors={[activeTheme.colors.primary, '#0055ff']} style={styles.calendarDoneGrad}>
+                <Text style={styles.calendarDoneText}>CONFIRMAR DATA</Text>
+              </LinearGradient>
+            </TouchableOpacity>
+          </View>
         </View>
-      </View>
-    </Modal>
-  );
+      </Modal>
+    );
+  };
 
   const handleSubmit = async () => {
     if (!startDate || !endDate) {

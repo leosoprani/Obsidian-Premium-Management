@@ -259,8 +259,8 @@ export default function ProfileTab({ onLogout, navigate }) {
                         />
                     </TouchableOpacity>
                     <View>
-                        <Text style={[styles.headerSub, { color: activeTheme.colors.primary }]}>AJUSTES</Text>
-                        <Text style={[styles.headerTitle, { color: activeTheme.colors.text }]}>Perfil</Text>
+                        <Text style={[styles.headerSub, { color: activeTheme.colors.primary }]}>AJUSTES DE PERFIL</Text>
+                        <Text style={[styles.headerTitle, { color: activeTheme.colors.text }]}>Proprietário</Text>
                     </View>
                 </View>
                 <TouchableOpacity 
@@ -276,13 +276,20 @@ export default function ProfileTab({ onLogout, navigate }) {
                 </TouchableOpacity>
             </View>
         </SafeAreaView>
+        {/* Scroll Mask - Gradiente para desvanecer o conteúdo no topo */}
+        <LinearGradient
+            colors={[activeTheme.colors.background, 'transparent']}
+            style={{ position: 'absolute', bottom: -60, left: 0, right: 0, height: 60 }}
+            pointerEvents="none"
+        />
       </View>
 
       <ScrollView 
         showsVerticalScrollIndicator={false} 
-        contentContainerStyle={styles.scrollContent}
+        contentContainerStyle={[styles.scrollContent, { paddingTop: height * 0.18 }]}
+        scrollEventThrottle={16}
       >
-        <View style={[styles.profileHero, { paddingTop: height * 0.18 }]}>
+        <View style={styles.profileHero}>
             <View style={styles.avatarGlowContainer}>
                 <LinearGradient
                     colors={[activeTheme.colors.primary + '40', 'transparent']}
