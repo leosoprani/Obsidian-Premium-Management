@@ -130,56 +130,75 @@ document.addEventListener('DOMContentLoaded', () => {
      */
     window.app.renderCurrentView = function() {
         const { currentView, reservations, guests, employees, expenses, properties, currentDate, selectedDate, firstReservationDate } = window.app.state;
-        switch (currentView) {
-            case 'dashboard':
-                ui.renderUpcomingEvents(reservations, guests);
-                ui.renderDashboardFinancialSummary(reservations, currentDate);
-                ui.renderOccupancyChart(reservations, properties);
-                ui.renderApartmentOccupancyChart(reservations, properties);
-                ui.renderMonthlyTrendChart(reservations, currentDate, properties);
-                break;
-            case 'calendar':
-                ui.renderCalendar(currentDate, selectedDate, firstReservationDate, reservations, guests, properties);
-                break;
-            case 'cards':
-                ui.renderActiveReservations(reservations, guests);
-                break;
-            case 'pending':
-                ui.renderPendingReservations(reservations, guests);
-                break;
-            case 'approvals':
-                ui.renderPendingApprovals(reservations, guests);
-                break;
-            case 'guests':
-                ui.renderGuestsList(guests);
-                break;
-            case 'finished':
-                ui.renderFinishedReservations(reservations, guests);
-                break;
-            case 'recent_guests':
-                ui.renderRecentGuests(guests);
-                break;
-            case 'employees':
-                ui.renderEmployeesList(employees);
-                break;
-            case 'properties':
-                ui.renderPropertiesList(properties);
-                break;
-            case 'users':
-                // A lista de usuários é carregada uma vez e mantida no estado
-                ui.renderUsersList(window.app.state.users);
-                break;
-            case 'logs':
-                ui.renderActivityLogs({
-                    logs: window.app.state.logs,
-                    totalCount: window.app.state.logsTotalCount,
-                    page: window.app.state.logsCurrentPage,
-                    totalPages: window.app.state.logsTotalPages,
-                });
-                break;
-            case 'financial':
-                ui.renderFinancialView(reservations, guests, expenses, currentDate);
-                break;
+        
+        try {
+            switch (currentView) {
+                case 'dashboard':
+                    ui.renderUpcomingEvents(reservations, guests);
+                    ui.renderDashboardFinancialSummary(reservations, currentDate);
+                    ui.renderOccupancyChart(reservations, properties);
+                    ui.renderApartmentOccupancyChart(reservations, properties);
+                    ui.renderMonthlyTrendChart(reservations, currentDate, properties);
+                    break;
+                case 'calendar':
+                    ui.renderCalendar(currentDate, selectedDate, firstReservationDate, reservations, guests, properties);
+                    break;
+                case 'cards':
+                    ui.renderActiveReservations(reservations, guests);
+                    break;
+                case 'pending':
+                    ui.renderPendingReservations(reservations, guests);
+                    break;
+                case 'approvals':
+                    ui.renderPendingApprovals(reservations, guests);
+                    break;
+                case 'guests':
+                    ui.renderGuestsList(guests);
+                    break;
+                case 'finished':
+                    ui.renderFinishedReservations(reservations, guests);
+                    break;
+                case 'recent_guests':
+                    ui.renderRecentGuests(guests);
+                    break;
+                case 'employees':
+                    ui.renderEmployeesList(employees);
+                    break;
+                case 'properties':
+                    ui.renderPropertiesList(properties);
+                    break;
+                case 'users':
+                    // A lista de usuários é carregada uma vez e mantida no estado
+                    ui.renderUsersList(window.app.state.users);
+                    break;
+                case 'logs':
+                    ui.renderActivityLogs({
+                        logs: window.app.state.logs,
+                        totalCount: window.app.state.logsTotalCount,
+                        page: window.app.state.logsCurrentPage,
+                        totalPages: window.app.state.logsTotalPages,
+                    });
+                    break;
+                case 'financial':
+                    ui.renderFinancialView(reservations, guests, expenses, currentDate);
+                    break;
+            }
+        } catch (error) {
+            console.error(`[Render] Erro fatal ao renderizar view "${currentView}":`, error);
+            // Fallback para evitar skeleton infinito
+            const containerIdMap = {
+                'finished': 'finished-reservations-container',
+                'guests': 'guests-list-container',
+                'properties': 'properties-list-container',
+                'pending': 'pending-reservations-container',
+                'cards': 'active-reservations-container'
+            };
+            const id = containerIdMap[currentView];
+            if (id) {
+                const el = document.getElementById(id);
+                if (el) el.innerHTML = `<div class="p-8 text-center text-outline"><i data-lucide="alert-circle" class="mx-auto mb-2 opacity-50"></i><p>Não foi possível carregar os dados desta aba.</p></div>`;
+                window.lucide?.createIcons();
+            }
         }
     };
 
