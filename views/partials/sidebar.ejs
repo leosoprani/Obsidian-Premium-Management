@@ -1,0 +1,54 @@
+<!-- ======================== -->
+<!-- SIDEBAR - Obsidian Shell -->
+<!-- ======================== -->
+<aside id="sidebar" class="bg-[#0b1323] fixed lg:relative z-50 w-64 h-full flex-shrink-0 flex flex-col transform -translate-x-full lg:translate-x-0 transition-transform duration-300 ease-in-out py-6 font-['Inter'] antialiased tracking-tight shadow-[32px_0_32px_-16px_rgba(223,229,250,0.04)] text-[#a4abbf]">
+    <div class="px-6 mb-10 flex justify-between items-center">
+        <div>
+            <h1 class="text-xl font-bold text-[#dfe5fa] tracking-tighter">Obsidian</h1>
+            <p class="text-xs text-[#a4abbf] uppercase tracking-widest mt-1">Premium Mgmt</p>
+        </div>
+        <button id="theme-toggle-btn" class="btn btn-ghost p-2 w-9 h-9 text-[#dfe5fa] hover:bg-[#1b263b] rounded-full lg:hidden"><i data-lucide="x"></i></button>
+    </div>
+
+    <nav id="main-tabs" class="flex-1 space-y-1 overflow-y-auto hide-scrollbar px-2">
+        <div id="view-tab-dashboard" class="view-tab active cursor-pointer hover:text-[#dfe5fa] hover:bg-[#1b263b] rounded-xl my-1 px-4 py-3 flex items-center gap-3 transition-all duration-300"><span class="material-symbols-outlined">dashboard</span><span>Dashboard</span></div>
+        <div id="view-tab-calendar" class="view-tab cursor-pointer hover:text-[#dfe5fa] hover:bg-[#1b263b] rounded-xl my-1 px-4 py-3 flex items-center gap-3 transition-all duration-300"><span class="material-symbols-outlined">calendar_month</span><span>Calendário</span></div>
+        <div id="view-tab-cards" class="view-tab cursor-pointer hover:text-[#dfe5fa] hover:bg-[#1b263b] rounded-xl my-1 px-4 py-3 flex items-center gap-3 transition-all duration-300"><span class="material-symbols-outlined">book_online</span><span>Reservas ativas</span></div>
+        <div id="view-tab-pending" class="view-tab cursor-pointer hover:text-[#dfe5fa] hover:bg-[#1b263b] rounded-xl my-1 px-4 py-3 flex items-center gap-3 transition-all duration-300"><span class="material-symbols-outlined">schedule</span><span>Reservas pendentes</span></div>
+        <div id="view-tab-approvals" class="view-tab cursor-pointer hover:text-[#dfe5fa] hover:bg-[#1b263b] rounded-xl my-1 px-4 py-3 flex items-center gap-3 transition-all duration-300 relative"><span class="material-symbols-outlined">check_circle</span><span>Aprovações</span><span id="approvals-count-badge" class="absolute top-3 right-3 h-4 w-4 rounded-full bg-error text-white text-[10px] items-center justify-center hidden flex"></span></div>
+        <div id="view-tab-finished" class="view-tab cursor-pointer hover:text-[#dfe5fa] hover:bg-[#1b263b] rounded-xl my-1 px-4 py-3 flex items-center gap-3 transition-all duration-300"><span class="material-symbols-outlined">archive</span><span>R. Finalizadas</span></div>
+        <div id="view-tab-properties" class="view-tab cursor-pointer hover:text-[#dfe5fa] hover:bg-[#1b263b] rounded-xl my-1 px-4 py-3 flex items-center gap-3 transition-all duration-300"><span class="material-symbols-outlined">domain</span><span>Propriedades</span></div>
+        <div id="view-tab-guests" class="view-tab cursor-pointer hover:text-[#dfe5fa] hover:bg-[#1b263b] rounded-xl my-1 px-4 py-3 flex items-center gap-3 transition-all duration-300"><span class="material-symbols-outlined">group</span><span>Hóspedes</span></div>
+
+        <div class="pt-4 pb-2 px-4"><span class="text-[10px] font-bold text-[#414859] uppercase tracking-widest">Operações</span></div>
+
+        <div id="view-tab-logs" class="view-tab cursor-pointer hover:text-[#dfe5fa] hover:bg-[#1b263b] rounded-xl my-1 px-4 py-3 flex items-center gap-3 transition-all duration-300"><span class="material-symbols-outlined">history</span><span>Atividades</span></div>
+        <div id="view-tab-users" class="view-tab cursor-pointer hover:text-[#dfe5fa] hover:bg-[#1b263b] rounded-xl my-1 px-4 py-3 flex items-center gap-3 transition-all duration-300"><span class="material-symbols-outlined">manage_accounts</span><span>Usuários</span></div>
+        <div id="view-tab-financial" class="view-tab cursor-pointer hover:text-[#dfe5fa] hover:bg-[#1b263b] rounded-xl my-1 px-4 py-3 flex items-center gap-3 transition-all duration-300"><span class="material-symbols-outlined">payments</span><span>Financeiro</span></div>
+        <div id="view-tab-employees" class="view-tab cursor-pointer hover:text-[#dfe5fa] hover:bg-[#1b263b] rounded-xl my-1 px-4 py-3 flex items-center gap-3 transition-all duration-300"><span class="material-symbols-outlined">badge</span><span>Funcionários</span></div>
+        <div id="view-tab-recent-guests" class="view-tab cursor-pointer hover:text-[#dfe5fa] hover:bg-[#1b263b] rounded-xl my-1 px-4 py-3 flex items-center gap-3 transition-all duration-300"><span class="material-symbols-outlined">person_add</span><span>Cadastros Recentes</span></div>
+
+        <div class="pt-4 pb-2 px-4"><span class="text-[10px] font-bold text-[#414859] uppercase tracking-widest">Utilitários</span></div>
+
+        <div>
+            <div id="maintenance-accordion-btn" class="view-tab cursor-pointer hover:text-[#dfe5fa] hover:bg-[#1b263b] rounded-xl my-1 px-4 py-3 flex items-center gap-3 transition-all duration-300">
+                <span class="material-symbols-outlined">build</span>
+                <span>Manutenção</span>
+                <span class="material-symbols-outlined ml-auto text-sm transition-transform">expand_more</span>
+            </div>
+            <div id="maintenance-accordion-content" class="hidden pl-6 pt-1 space-y-1">
+                <a href="#" id="add-cleaning-btn" class="flex hover:text-[#dfe5fa] py-2 px-2 items-center gap-2 text-sm"><span class="material-symbols-outlined text-[16px] text-tertiary">cleaning_services</span> Limpeza</a>
+                <a href="#" id="add-maintenance-btn" class="flex hover:text-[#dfe5fa] py-2 px-2 items-center gap-2 text-sm"><span class="material-symbols-outlined text-[16px] text-secondary">handyman</span> Manutenção</a>
+                <a href="#" id="add-blocking-btn" class="flex hover:text-[#dfe5fa] py-2 px-2 items-center gap-2 text-sm"><span class="material-symbols-outlined text-[16px] text-error">lock</span> Bloqueio</a>
+                <a href="#" id="add-employee-btn" class="flex hover:text-[#dfe5fa] py-2 px-2 items-center gap-2 text-sm"><span class="material-symbols-outlined text-[16px] text-primary">person_add</span> Empregado</a>
+                <a href="#" id="add-expense-link-sidebar" class="flex hover:text-[#dfe5fa] py-2 px-2 items-center gap-2 text-sm"><span class="material-symbols-outlined text-[16px] text-secondary-dim">receipt</span> Despesa</a>
+            </div>
+        </div>
+    </nav>
+
+    <div class="px-4 mt-auto space-y-1 border-t border-outline-variant/20 pt-4">
+        <button id="settings-btn" class="w-full text-left cursor-pointer hover:text-[#dfe5fa] hover:bg-[#1b263b] rounded-xl my-1 px-4 py-3 flex items-center gap-3 transition-all duration-300"><span class="material-symbols-outlined">settings</span> Configurações</button>
+        <button id="save-progress-btn" class="w-full text-left cursor-pointer hover:text-[#dfe5fa] hover:bg-[#1b263b] rounded-xl my-1 px-4 py-3 flex items-center gap-3 transition-all duration-300"><span class="material-symbols-outlined">save</span> Backup Local</button>
+        <button id="exit-app-btn" class="w-full text-left text-error hover:bg-error/10 rounded-xl my-1 px-4 py-3 flex items-center gap-3 transition-all duration-300"><span class="material-symbols-outlined">logout</span> Sair</button>
+    </div>
+</aside>

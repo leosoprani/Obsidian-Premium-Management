@@ -1,0 +1,49 @@
+# Atualização da Interface do Sistema (Novo Design `code.html`)
+
+O usuário solicitou a verificação da viabilidade de usar o layout contido em `code.html` (o Dashboard Obsidian, com tema Portfolio Intelligence) como a nova interface, substituindo a atual de todo o sistema.
+
+## Observação sobre o PRD (`product_requirements_document.md`)
+> [!NOTE]
+> O arquivo `product_requirements_document.md` fornecido atualmente é **apenas um template vazio** (um modelo genérico) e não contém as regras de negócios ou requisitos específicos do seu projeto. Caso queira, podemos preenchê-lo juntos ao longo do processo para documentar todas as funcionalidades do sistema e regras de negócio. Caso contrário, basearemos a implementação da interface puramente no visual de `code.html` e na lógica existente no seu `index.html`.
+
+## Análise de Viabilidade
+
+**É possível realizar essa substituição visual baseada no `code.html`?** 
+Sim, totalmente viável. A imagem fornecida e o arquivo `code.html` mostram um layout deslumbrante em TailwindCSS (no formato Bento Grid) com cores premium escuras. No entanto, não podemos simplesmente sobrescrever o arquivo `index.html` de 1600+ linhas com o `code.html`. 
+
+O `index.html` contém a lógica de navegação do site (SPA), modais, e interações com IndexedDB, enquanto o `code.html` contém apenas a estrutura visual (HTML/CSS estático) de **uma única tela**, a página inicial "Portfolio Intelligence".
+
+## Proposed Changes
+
+Para aplicar o novo visual do `code.html` em todo o sistema atual (`index.html`), o processo de modernização ocorrerá nas seguintes etapas progressivas:
+
+### Fase 1: Atualização Global (Design System)
+Extrair as configurações do Tailwind (paleta de cores do Obsidian, Google Fonts "Inter", Material Symbols) que foram configuradas no `<head>` do `code.html` e aplicá-las globalmente no `index.html`. 
+- **[MODIFY]** `index.html` (Tag `<head>`, scripts de fontes e `tailwind.config`, e aplicação das regras bases no `<body>` e de scrollbars customizados ocultos).
+
+### Fase 2: Estrutura Principal (Layout Shell)
+Substituir a atual Barra Lateral de Navegação (Sidebar) e o  Cabeçalho de Ações (Top Navigation Bar) pelos novos elementos presentes no `code.html`. 
+- **[MODIFY]** `index.html` (Substituir o `<aside id="sidebar">` preservando as chaves de IDs `view-tab-*` do JS para o roteamento não quebrar).
+- **[MODIFY]** `index.html` (Atualizar o `<header>` do topo, adaptando a busca, botão de Chat, botão +Guest e +Reservation).
+
+### Fase 3: Dashboard em Bento Grid ("Portfolio Intelligence")
+Refatorar a view do Dashboard (`<div id="dashboard-view">`) para usar o novo layout Bento Grid deslumbrante ("Revenue Performance", "Occupancy Rate - Elite Status", "Next Events", "Top Properties").
+- **[MODIFY]** `index.html` (View Dashboard).
+- Será necessário atualizar os IDs e o código JavaScript (que provavelmente está em `server.js` ou scripts no final do `index.html`) que injeta os valores reais dos gráficos para se adequarem às novas classes DOM (como barras de progresso do Tailwind ao invés de Canvas do Chart.js puro, caso desejado).
+
+### Fase 4: Adaptação das Outras Telas e Modais ao Padrão Visual
+Como o `code.html` definiu a estética apenas para o Dashboard, usarei as cores `bg-surface-container`, `glass-card`, `text-on-surface`, e acentos em _primary_ e _secondary_ para reconstruir manualmente as outras views essenciais:
+- Modais de Cadastro e Configuração.
+- Telas de Reservas, Propriedades e Usuários.
+- Calendário: adaptar o calendário atual para que adote os contrastes da paleta Obsidian.
+- **[MODIFY]** `index.html` (Re-estilizar as seções de `#cards-view`, `#calendar-view`, modais `.card`).
+
+## User Review Required
+
+> [!WARNING]
+> Devido ao tamanho do `index.html` (1600 linhas) e à complexidade do JavaScript atrelado nele, esta será uma refatoração minuciosa. Recomendo fazermos os passos gradualmente, ou seja, **passo a passo nas fases acima**, testando sempre ao fim de cada fase para garantir que a funcionalidade principal do sistema (salvar reservas, adicionar hóspedes, abrir calendário) continue funcionando sem problemas.
+
+## Open Questions
+
+1. Podemos iniciar imediatamente a **Fase 1 e Fase 2** detalhadas acima para unificarmos logo o menu lateral (Sidebar) e o Cabeçalho (Header) seguindo o lindo design do `code.html`?
+2. Gostaria de preencher o `product_requirements_document.md` juntos para padronizar todo o projeto antes, ou prosseguimos diretamente para o código?
