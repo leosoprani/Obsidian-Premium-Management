@@ -458,12 +458,18 @@ app.get('/api/logs', authenticateToken, authorize('admin'), async (req, res) => 
 
 // Rota para listar todas as propriedades
 app.get('/api/properties', authenticateToken, async (req, res) => {
-    const { role, apartment } = req.user;
+    const { role, apartments, apartment } = req.user;
     try {
         let query = {};
-        if (role === 'owner' && apartment) {
-            // Busca tolerante a espaços e maiúsculas/minúsculas
-            query = { name: new RegExp(`^${apartment.trim()}$`, 'i') };
+        if (role === 'owner') {
+            if (Array.isArray(apartments) && apartments.length > 0) {
+                query = { name: { $in: apartments.map(apt => new RegExp(`^${apt.trim()}$`, 'i')) } };
+            } else if (apartment) {
+                query = { name: new RegExp(`^${apartment.trim()}$`, 'i') };
+            } else {
+                // Se é proprietário mas não tem apartamento vinculado, retorna vazio por segurança
+                return res.json([]);
+            }
         }
         const properties = await db.collection('properties').find(query).sort({ name: 1 }).toArray();
         res.json(properties);
@@ -776,7 +782,7 @@ app.post('/api/guests', authenticateToken, authorize(['admin', 'staff', 'owner']
             guestData.createdAt = new Date(); // Adiciona a data de criação
             guestData.createdBy = req.user.username; // Rastreia quem criou
             if (req.user.role === 'owner') {
-                guestData.apartment = req.user.apartment; // Vincula ao apartamento do proprietário
+                guestData.apartment = (req.user.apartments && req.user.apartments[0]) || req.user.apartment; // Vincula ao primeiro apartamento do proprietário
             }
             const insertResult = await db.collection('guests').insertOne(guestData);
             // Busca o documento recém-criado para retornar o objeto completo.

@@ -71,6 +71,9 @@ async function saveToCache(data) {
         if (Array.isArray(data.employees) && data.employees.length > 0) {
             await db.employees.bulkPut(data.employees);
         }
+        if (Array.isArray(data.properties) && data.properties.length > 0) {
+            await db.properties.bulkPut(data.properties);
+        }
         if (Array.isArray(data.expenses) && data.expenses.length > 0) {
             // Expenses usa ++id autoincrementado, precisamos de upsert manual
             for (const expense of data.expenses) {
@@ -97,17 +100,18 @@ async function readFromCache() {
     if (!db) return null;
 
     try {
-        const [guests, reservations, employees, expenses] = await Promise.all([
+        const [guests, reservations, employees, expenses, properties] = await Promise.all([
             db.guests.toArray(),
             db.reservations.toArray(),
             db.employees.toArray(),
             db.expenses.toArray(),
+            db.properties.toArray(),
         ]);
 
-        const hasData = guests.length > 0 || reservations.length > 0;
+        const hasData = guests.length > 0 || reservations.length > 0 || properties.length > 0;
         if (!hasData) return null;
 
-        return { guests, reservations, employees, expenses, properties: [] };
+        return { guests, reservations, employees, expenses, properties };
     } catch (err) {
         console.error('[Sync] Erro ao ler do cache local:', err);
         return null;
@@ -147,7 +151,10 @@ export async function loadDataCacheFirst(onCacheData = null, onFreshData = null,
     }
 
     // 2. Se o cache está fresco e não é forçado, retorna o cache
-    if (cachedData && isCacheFresh() && !forceRefresh) {
+    // ADICIONAL: Se properties estiver vazio no cache, forçamos um refresh mesmo com cache fresco
+    const hasProperties = cachedData && cachedData.properties && cachedData.properties.length > 0;
+
+    if (cachedData && isCacheFresh() && !forceRefresh && hasProperties) {
         console.log('[Sync] Cache ainda fresco, pulando busca na API.');
         return [
             cachedData.guests,

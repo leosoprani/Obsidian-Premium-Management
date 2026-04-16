@@ -9,12 +9,13 @@ import { skeleton } from './skeleton.js';
 import * as sync from './sync.js';
 
 export const db = new window.Dexie('FlatManagerDB');
-db.version(5).stores({
+db.version(6).stores({
     guests: 'id, name',
     reservations: 'id, guestId, apartment, checkin, price, paymentStatus',
     auto_backups: '++id, timestamp',
     employees: 'id, name, role',
-    expenses: '++id, date, category'
+    expenses: '++id, date, category',
+    properties: '_id, name'
 });
 // Expõe o banco para o módulo de sync (sem import circular)
 window._syncDb = db;
@@ -981,6 +982,7 @@ document.addEventListener('DOMContentLoaded', () => {
                         window.app.state.reservations = cachedData.reservations;
                         window.app.state.employees = cachedData.employees;
                         window.app.state.expenses = cachedData.expenses;
+                        window.app.state.properties = cachedData.properties;
                         // Renderiza imediatamente com dados do cache (elimina tela branca)
                         window.app.switchView(window.app.state.currentView);
                     }
