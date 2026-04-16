@@ -671,9 +671,18 @@ export function renderPendingReservations(reservations, guests) {
  * @param {Array} reservations - Array de todas as reservas.
  * @param {Array} guests - Array de todos os hóspedes.
  */
-export function renderFinishedReservations(reservations, guests) {
-    const container = document.getElementById('finished-reservations-container');
-    const finishedOrCanceled = reservations.filter(res => res.status === 'finished' || res.status === 'canceled').sort((a, b) => b.checkout.localeCompare(a.checkout));
+    if (!Array.isArray(reservations)) {
+        container.innerHTML = `<p class="text-outline p-4 text-center">Dados de reservas inválidos.</p>`;
+        return;
+    }
+
+    const finishedOrCanceled = reservations
+        .filter(res => res.status === 'finished' || res.status === 'canceled')
+        .sort((a, b) => {
+            const dateA = a.checkout || '';
+            const dateB = b.checkout || '';
+            return dateB.localeCompare(dateA);
+        });
 
     if (finishedOrCanceled.length === 0) {
         container.innerHTML = `<p class="text-outline p-4 text-center">Nenhuma reserva finalizada ou cancelada encontrada.</p>`;
@@ -696,16 +705,23 @@ export function renderFinishedReservations(reservations, guests) {
                 </thead>
                 <tbody>
                     ${finishedOrCanceled.map(res => {
-        const guest = guests.find(g => g.id === res.guestId);
-        if (!guest) return '';
-        const status = statusConfig[res.status] || { text: 'Finalizada' };
-        const checkin = `${new Date(res.checkin + 'T00:00:00').toLocaleDateString('pt-BR')} ${res.checkinTime || ''}`.trim();
-        const checkout = `${new Date(res.checkout + 'T00:00:00').toLocaleDateString('pt-BR')} ${res.checkoutTime || ''}`.trim();
+        const guest = guests && Array.isArray(guests) ? guests.find(g => g.id === res.guestId) : null;
+        const guestName = guest ? guest.name : (res.guestName || 'Hóspede desconhecido');
+        const guestDoc = guest ? (guest.doc || '-') : '-';
+        
+        const status = statusConfig[res.status] || { text: 'Finalizada', color: 'bg-slate-500/20', textColor: 'text-slate-300' };
+        
+        const checkinDate = res.checkin ? new Date(res.checkin + 'T00:00:00') : null;
+        const checkoutDate = res.checkout ? new Date(res.checkout + 'T00:00:00') : null;
+        
+        const checkin = checkinDate ? `${checkinDate.toLocaleDateString('pt-BR')} ${res.checkinTime || ''}`.trim() : '-';
+        const checkout = checkoutDate ? `${checkoutDate.toLocaleDateString('pt-BR')} ${res.checkoutTime || ''}`.trim() : '-';
+        
         return `
                             <tr class="border-b cursor-pointer finished-row-hover" onclick="window.app.modals.openReservationModal('${res.id}')">
-                                <td class="p-4">${guest.name}</td>
-                                <td class="p-4 text-on-surface-variant">${guest.doc || '-'}</td>
-                                <td class="p-4 text-on-surface-variant">${res.apartment}</td>
+                                <td class="p-4">${guestName}</td>
+                                <td class="p-4 text-on-surface-variant">${guestDoc}</td>
+                                <td class="p-4 text-on-surface-variant">${res.apartment || '-'}</td>
                                 <td class="p-4 text-on-surface-variant">${checkin}</td>
                                 <td class="p-4 text-on-surface-variant">${checkout}</td>
                                 <td class="p-4"><span class="text-sm font-bold py-1.5 px-3 rounded-full ${status.color} ${status.textColor}">${status.text}</span></td>
