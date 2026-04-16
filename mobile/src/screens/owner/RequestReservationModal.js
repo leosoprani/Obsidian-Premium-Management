@@ -106,13 +106,8 @@ export default function RequestReservationModal({ visible, onClose, initialData,
   };
 
   const onDateChange = (event, selectedDate, type) => {
-    // No Android, precisamos fechar o picker manualmente se for uma ação de set/dismiss
-    if (Platform.OS === 'android') {
-      setShowStartPicker(false);
-      setShowEndPicker(false);
-    }
-    
-    // Se o usuário cancelar, o event.type será 'dismissed' (no Android) ou o selectedDate será undefined
+    // No Android com display='spinner', o onChange é chamado a cada scroll.
+    // Não fechamos o picker aqui — o usuário confirma pelo botão.
     if (event.type === 'dismissed') return;
 
     if (selectedDate) {
@@ -144,10 +139,12 @@ export default function RequestReservationModal({ visible, onClose, initialData,
           <DateTimePicker
             value={value}
             mode="date"
-            display={Platform.OS === 'ios' ? 'inline' : 'default'}
+            display={Platform.OS === 'ios' ? 'inline' : 'spinner'}
             onChange={onChange}
             minimumDate={title === 'DATA DE CHECK-OUT' ? tempStartDate : new Date()}
             themeVariant="dark"
+            textColor="#ffffff"
+            style={Platform.OS === 'android' ? { height: 160 } : undefined}
           />
           <TouchableOpacity style={styles.calendarDoneBtn} onPress={onClose}>
             <LinearGradient colors={[activeTheme.colors.primary, '#0055ff']} style={styles.calendarDoneGrad}>
