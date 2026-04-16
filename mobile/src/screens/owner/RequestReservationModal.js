@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import {
   View, Text, StyleSheet, TouchableOpacity, TextInput,
   Modal, ScrollView, Alert, ActivityIndicator, Platform,
-  KeyboardAvoidingView, Pressable, Linking, Image
+  KeyboardAvoidingView, Pressable, Linking, Image, Switch
 } from 'react-native';
 import { formatDateBR } from '../../utils/dateUtils';
 import DateTimePicker from '@react-native-community/datetimepicker';
@@ -27,6 +27,12 @@ export default function RequestReservationModal({ visible, onClose, initialData,
   const [guestSearch, setGuestSearch] = useState('');
   const [showGuestList, setShowGuestList] = useState(false);
   
+  // New Fields: Vehicle and Pet
+  const [vehicleModel, setVehicleModel] = useState('');
+  const [vehiclePlate, setVehiclePlate] = useState('');
+  const [vehicleColor, setVehicleColor] = useState('');
+  const [pet, setPet]                   = useState(false);
+  
   // Date Picker States
   const [showStartPicker, setShowStartPicker] = useState(false);
   const [showEndPicker, setShowEndPicker] = useState(false);
@@ -50,6 +56,10 @@ export default function RequestReservationModal({ visible, onClose, initialData,
         setGuestSearch(initialData.guestName || '');
         setNotes(initialData.notes || '');
         setPrice(initialData.price ? String(initialData.price) : '');
+        setVehicleModel(initialData.vehicleModel || '');
+        setVehiclePlate(initialData.vehiclePlate || '');
+        setVehicleColor(initialData.vehicleColor || '');
+        setPet(!!initialData.pet);
       } else {
         loadOwnerData();
       }
@@ -130,28 +140,23 @@ export default function RequestReservationModal({ visible, onClose, initialData,
   const DatePickerModal = ({ visible, value, onChange, onClose, title }) => (
     <Modal visible={visible} transparent animationType="fade">
       <View style={styles.calendarOverlay}>
-        <BlurView 
-            intensity={Platform.OS === 'ios' ? 100 : 95} 
-            tint="dark" 
-            style={[styles.calendarCard, Platform.OS === 'android' && { backgroundColor: 'rgba(20, 20, 22, 0.98)' }]}
-        >
-          <Text style={styles.calendarTitle}>{title}</Text>
+        <View style={[styles.calendarCard, { backgroundColor: activeTheme.colors.surface, borderColor: activeTheme.colors.glassBorder }]}>
+          <Text style={[styles.calendarTitle, { color: activeTheme.colors.text }]}>{title}</Text>
           <DateTimePicker
             value={value}
             mode="date"
-            display={Platform.OS === 'ios' ? 'inline' : 'spinner'}
+            display={Platform.OS === 'ios' ? 'inline' : 'default'}
             onChange={onChange}
             minimumDate={title === 'DATA DE CHECK-OUT' ? tempStartDate : new Date()}
             themeVariant="dark"
             textColor="#ffffff"
-            style={Platform.OS === 'android' ? { height: 160 } : undefined}
           />
           <TouchableOpacity style={styles.calendarDoneBtn} onPress={onClose}>
             <LinearGradient colors={[activeTheme.colors.primary, '#0055ff']} style={styles.calendarDoneGrad}>
               <Text style={styles.calendarDoneText}>CONFIRMAR DATA</Text>
             </LinearGradient>
           </TouchableOpacity>
-        </BlurView>
+        </View>
       </View>
     </Modal>
   );
@@ -180,6 +185,10 @@ export default function RequestReservationModal({ visible, onClose, initialData,
         price: price ? Number(price) : null,
         status: newStatus,
         guestName,
+        vehicleModel,
+        vehiclePlate,
+        vehicleColor,
+        pet,
       };
       await api.post('/reservations', payload);
       
@@ -257,6 +266,7 @@ export default function RequestReservationModal({ visible, onClose, initialData,
   const resetForm = () => {
     setStartDate(''); setEndDate(''); setGuestName('');
     setNotes(''); setPrice(''); setGuestSearch(''); setShowGuestList(false);
+    setVehicleModel(''); setVehiclePlate(''); setVehicleColor(''); setPet(false);
   };
 
   return (
@@ -405,6 +415,71 @@ export default function RequestReservationModal({ visible, onClose, initialData,
                       onChange={(e, d) => onDateChange(e, d, 'end')}
                       onClose={() => setShowEndPicker(false)}
                     />
+                </View>
+            </View>
+
+            <View style={styles.fieldSection}>
+                <Text style={styles.sectionTitle}>VEÍCULO (OPCIONAL)</Text>
+                <View style={styles.glassContainer}>
+                    <View style={styles.field}>
+                      <View style={styles.labelRow}>
+                        <Image source={require('../../../assets/icons/dots_active.png')} style={{ width: 14, height: 14, tintColor: activeTheme.colors.primary }} resizeMode="contain" />
+                        <Text style={[styles.label, { color: activeTheme.colors.textTertiary }]}>PLACA</Text>
+                      </View>
+                      <TextInput
+                        style={[styles.input, { color: activeTheme.colors.text }]}
+                        placeholder="Ex: ABC1D23"
+                        placeholderTextColor={activeTheme.colors.textTertiary}
+                        value={vehiclePlate}
+                        onChangeText={setVehiclePlate}
+                        autoCapitalize="characters"
+                      />
+                    </View>
+                    <View style={styles.dividerLarge} />
+                    <View style={styles.field}>
+                      <View style={styles.labelRow}>
+                        <Image source={require('../../../assets/icons/dots_active.png')} style={{ width: 14, height: 14, tintColor: activeTheme.colors.primary }} resizeMode="contain" />
+                        <Text style={[styles.label, { color: activeTheme.colors.textTertiary }]}>MODELO E COR</Text>
+                      </View>
+                      <View style={{ flexDirection: 'row', gap: 10 }}>
+                        <TextInput
+                          style={[styles.input, { color: activeTheme.colors.text, flex: 1 }]}
+                          placeholder="Modelo"
+                          placeholderTextColor={activeTheme.colors.textTertiary}
+                          value={vehicleModel}
+                          onChangeText={setVehicleModel}
+                        />
+                        <View style={{ width: 1, height: '100%', backgroundColor: 'rgba(255,255,255,0.05)' }} />
+                        <TextInput
+                          style={[styles.input, { color: activeTheme.colors.text, flex: 1 }]}
+                          placeholder="Cor"
+                          placeholderTextColor={activeTheme.colors.textTertiary}
+                          value={vehicleColor}
+                          onChangeText={setVehicleColor}
+                        />
+                      </View>
+                    </View>
+                </View>
+            </View>
+
+            <View style={styles.fieldSection}>
+                <Text style={styles.sectionTitle}>OPÇÕES ADICIONAIS</Text>
+                <View style={styles.glassContainer}>
+                    <View style={[styles.field, { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }]}>
+                        <View>
+                            <View style={styles.labelRow}>
+                                <Image source={require('../../../assets/icons/dots_active.png')} style={{ width: 14, height: 14, tintColor: activeTheme.colors.primary }} resizeMode="contain" />
+                                <Text style={[styles.label, { color: activeTheme.colors.textTertiary }]}>PERMITIR PETS?</Text>
+                            </View>
+                            <Text style={{ color: activeTheme.colors.textSecondary, fontSize: 13 }}>{pet ? 'Autorizado' : 'Não autorizado'}</Text>
+                        </View>
+                        <Switch 
+                            value={pet}
+                            onValueChange={setPet}
+                            trackColor={{ false: 'rgba(255,255,255,0.1)', true: activeTheme.colors.primary }}
+                            thumbColor="#fff"
+                        />
+                    </View>
                 </View>
             </View>
 
