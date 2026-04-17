@@ -6,6 +6,7 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Calendar, LocaleConfig } from 'react-native-calendars';
+import { LinearGradient } from 'expo-linear-gradient';
 import { BlurView } from 'expo-blur';
 import api from '../../services/api';
 import { theme } from '../../styles/theme';
@@ -231,7 +232,8 @@ export default function CalendarTab({ selectedApartment }) {
   return (
     <View style={[styles.container, { backgroundColor: activeTheme.colors.background }]}>
       <MeshBackground colors={activeTheme.colors.mesh} />
-      <View style={[styles.floatingHeader, { backgroundColor: 'transparent', borderBottomWidth: 0 }]}>
+      {/* HEADER */}
+      <View style={[styles.floatingHeader, { backgroundColor: activeTheme.colors.mesh[0], borderBottomWidth: 0 }]}>
         <SafeAreaView edges={['top']}>
             <View style={styles.headerContent}>
                 <View>
@@ -250,6 +252,12 @@ export default function CalendarTab({ selectedApartment }) {
                 </TouchableOpacity>
             </View>
         </SafeAreaView>
+        {/* Scroll Mask - Gradiente para desvanecer o conteúdo com a cor do topo do Mesh */}
+        <LinearGradient
+            colors={[activeTheme.colors.mesh[0], 'transparent']}
+            style={{ position: 'absolute', bottom: -60, left: 0, right: 0, height: 60 }}
+            pointerEvents="none"
+        />
       </View>
 
       <ScrollView

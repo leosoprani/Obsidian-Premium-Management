@@ -105,23 +105,34 @@ export default function AdminUsersTab() {
   return (
     <View style={[styles.container, { backgroundColor: theme.colors.background }]}>
       <MeshBackground colors={theme.colors.mesh} />
-      <View style={styles.header}>
-        <View>
-            <Text style={[styles.headerSub, { color: theme.colors.primary }]}>GESTÃO DE ACESSOS</Text>
-            <Text style={[styles.headerTitle, { color: theme.colors.text }]}>Equipe</Text>
-        </View>
-        <TouchableOpacity 
-            activeOpacity={0.8}
-            style={styles.addBtn} 
-            onPress={() => setIsModalVisible(true)}
-        >
-            <LinearGradient 
-                colors={[theme.colors.primary, '#0055ff']} 
-                style={styles.addBtnGrad}
+      {/* HEADER */}
+      <View style={[styles.floatingHeader, { backgroundColor: theme.colors.mesh[0] }]} pointerEvents="box-none">
+        <SafeAreaView edges={['top']}>
+          <View style={styles.header}>
+            <View>
+                <Text style={[styles.headerSub, { color: theme.colors.primary }]}>GESTÃO DE ACESSOS</Text>
+                <Text style={[styles.headerTitle, { color: theme.colors.text }]}>Equipe</Text>
+            </View>
+            <TouchableOpacity 
+                activeOpacity={0.8}
+                style={styles.addBtn} 
+                onPress={() => setIsModalVisible(true)}
             >
-                <Image source={require('../../../assets/icons/add_active.png')} style={{ width: 24, height: 24, tintColor: '#fff' }} resizeMode="contain" />
-            </LinearGradient>
-        </TouchableOpacity>
+                <LinearGradient 
+                    colors={[theme.colors.primary, '#0055ff']} 
+                    style={styles.addBtnGrad}
+                >
+                    <Image source={require('../../../assets/icons/add_active.png')} style={{ width: 24, height: 24, tintColor: '#fff' }} resizeMode="contain" />
+                </LinearGradient>
+            </TouchableOpacity>
+          </View>
+        </SafeAreaView>
+        {/* Scroll Mask - Gradiente para desvanecer o conteúdo com a cor do topo do Mesh */}
+        <LinearGradient
+            colors={[theme.colors.mesh[0], 'transparent']}
+            style={{ position: 'absolute', bottom: -60, left: 0, right: 0, height: 60 }}
+            pointerEvents="none"
+        />
       </View>
 
       <AdminAddUserModal 
@@ -155,7 +166,7 @@ export default function AdminUsersTab() {
         onScroll={handleScroll}
         scrollEventThrottle={16}
         ListHeaderComponent={
-          <View style={styles.searchSection}>
+          <View style={[styles.searchSection, { marginTop: 150 }]}>
             <View style={[styles.searchBar, { backgroundColor: theme.colors.glass, borderColor: theme.colors.glassBorder }]}>
               <Image source={require('../../../assets/icons/search_active.png')} style={{ width: 18, height: 18, marginRight: 8, opacity: 0.5, tintColor: theme.colors.text }} resizeMode="contain" />
               <TextInput 
@@ -188,8 +199,15 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between', 
     alignItems: 'center', 
     paddingHorizontal: 25, 
-    paddingTop: 60, 
+    paddingTop: 10, 
     paddingBottom: 20 
+  },
+  floatingHeader: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    zIndex: 100,
   },
   headerTitle: { color: theme.colors.text, fontSize: 28, fontWeight: '800', letterSpacing: -0.5 },
   headerSub: { color: theme.colors.primary, fontSize: 10, fontWeight: '700', letterSpacing: 2 },

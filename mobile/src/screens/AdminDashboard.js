@@ -142,37 +142,49 @@ export default function AdminDashboard({ onLogout }) {
       <MeshBackground colors={activeTheme.colors.mesh} />
       <SafeAreaView style={{ flex: 1 }}>
         <StatusBar style={isDark ? "light" : "dark"} />
-        <ScrollView 
-          refreshControl={
-            <RefreshControl 
-              refreshing={refreshing} 
-              onRefresh={loadData} 
-              tintColor={activeTheme.colors.primary} 
-            />
-          }
-          showsVerticalScrollIndicator={false}
-          contentContainerStyle={styles.scrollContent}
-          onScroll={handleScroll}
-          scrollEventThrottle={16}
-        >
-          <View style={styles.header}>
-            <View>
-                <Text style={[styles.welcomeText, { color: activeTheme.colors.textSecondary }]}>Olá, Administrador</Text>
-                <Text style={[styles.brandTitle, { color: activeTheme.colors.text }]}>Obsidian Console</Text>
+      {/* HEADER */}
+      <View style={[styles.floatingHeader, { backgroundColor: activeTheme.colors.mesh[0] }]} pointerEvents="box-none">
+        <SafeAreaView edges={['top']}>
+            <View style={styles.header}>
+                <View>
+                    <Text style={[styles.welcomeText, { color: activeTheme.colors.textSecondary }]}>Olá, Administrador</Text>
+                    <Text style={[styles.brandTitle, { color: activeTheme.colors.text }]}>Obsidian Console</Text>
+                </View>
+                <TouchableOpacity style={styles.profileCircle} onPress={onLogout}>
+                    <LinearGradient 
+                        colors={[activeTheme.colors.glassSecondary, activeTheme.colors.glass]} 
+                        style={[styles.profileGradient, { borderColor: activeTheme.colors.glassBorder, borderWidth: 1, borderRadius: 22 }]}
+                    >
+                        <Image 
+                            source={require('../../assets/icons/logout_active.png')} 
+                            style={{ width: 18, height: 18, tintColor: activeTheme.colors.error }}
+                            resizeMode="contain"
+                        />
+                    </LinearGradient>
+                </TouchableOpacity>
             </View>
-            <TouchableOpacity style={styles.profileCircle} onPress={onLogout}>
-                <LinearGradient 
-                    colors={[activeTheme.colors.glassSecondary, activeTheme.colors.glass]} 
-                    style={[styles.profileGradient, { borderColor: activeTheme.colors.glassBorder, borderWidth: 1, borderRadius: 22 }]}
-                >
-                    <Image 
-                        source={require('../../assets/icons/logout_active.png')} 
-                        style={{ width: 18, height: 18, tintColor: activeTheme.colors.error }}
-                        resizeMode="contain"
-                    />
-                </LinearGradient>
-            </TouchableOpacity>
-        </View>
+        </SafeAreaView>
+        {/* Scroll Mask - Gradiente para desvanecer o conteúdo com a cor do topo do Mesh */}
+        <LinearGradient
+            colors={[activeTheme.colors.mesh[0], 'transparent']}
+            style={{ position: 'absolute', bottom: -60, left: 0, right: 0, height: 60 }}
+            pointerEvents="none"
+        />
+      </View>
+
+      <ScrollView 
+        refreshControl={
+          <RefreshControl 
+            refreshing={refreshing} 
+            onRefresh={loadData} 
+            tintColor={activeTheme.colors.primary} 
+          />
+        }
+        showsVerticalScrollIndicator={false}
+        contentContainerStyle={[styles.scrollContent, { paddingTop: 130 }]}
+        onScroll={handleScroll}
+        scrollEventThrottle={16}
+      >
 
         <View style={styles.kpiGrid}>
                 <KPICard 
@@ -434,8 +446,15 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between', 
     alignItems: 'center', 
     paddingHorizontal: theme.spacing.lg,
-    paddingTop: theme.spacing.lg,
-    paddingBottom: theme.spacing.xl
+    paddingTop: 10,
+    paddingBottom: 20
+  },
+  floatingHeader: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    zIndex: 100,
   },
   welcomeText: { color: theme.colors.textSecondary, fontSize: 14, fontWeight: '500' },
   brandTitle: { color: theme.colors.text, fontSize: 28, fontWeight: '800', letterSpacing: -0.5 },

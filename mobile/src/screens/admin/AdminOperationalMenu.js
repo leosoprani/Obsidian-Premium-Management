@@ -49,13 +49,23 @@ export default function AdminOperationalMenu({ onNavigate }) {
   return (
     <View style={{ flex: 1 }}>
       <MeshBackground colors={activeTheme.colors.mesh} />
-      <SafeAreaView style={[styles.container, { backgroundColor: 'transparent' }]}>
-        <View style={styles.header}>
-            <Text style={[styles.title, { color: activeTheme.colors.text }]}>Manutenção</Text>
-            <Text style={[styles.sub, { color: activeTheme.colors.primary }]}>GESTÃO OPERACIONAL</Text>
-        </View>
+      {/* HEADER */}
+      <View style={[styles.floatingHeader, { backgroundColor: activeTheme.colors.mesh[0] }]} pointerEvents="box-none">
+        <SafeAreaView edges={['top']}>
+            <View style={styles.header}>
+                <Text style={[styles.title, { color: activeTheme.colors.text }]}>Manutenção</Text>
+                <Text style={[styles.sub, { color: activeTheme.colors.primary }]}>GESTÃO OPERACIONAL</Text>
+            </View>
+        </SafeAreaView>
+        {/* Scroll Mask - Gradiente para desvanecer o conteúdo com a cor do topo do Mesh */}
+        <LinearGradient
+            colors={[activeTheme.colors.mesh[0], 'transparent']}
+            style={{ position: 'absolute', bottom: -60, left: 0, right: 0, height: 60 }}
+            pointerEvents="none"
+        />
+      </View>
 
-        <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
+      <ScrollView contentContainerStyle={[styles.scrollContent, { paddingTop: 130 }]} showsVerticalScrollIndicator={false}>
             <View style={styles.grid}>
             {menuItems.map((item) => (
                 <TouchableOpacity 
@@ -86,14 +96,20 @@ export default function AdminOperationalMenu({ onNavigate }) {
           ))}
         </View>
       </ScrollView>
-    </SafeAreaView>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
   container: { flex: 1 },
-  header: { paddingHorizontal: 25, paddingTop: 20, paddingBottom: 25 },
+  header: { paddingHorizontal: 25, paddingTop: 10, paddingBottom: 20 },
+  floatingHeader: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    zIndex: 100,
+  },
   title: { fontSize: 32, fontWeight: '800', letterSpacing: -0.5 },
   sub: { fontSize: 10, fontWeight: '900', letterSpacing: 2 },
   scrollContent: { paddingHorizontal: 25, paddingBottom: 120 },

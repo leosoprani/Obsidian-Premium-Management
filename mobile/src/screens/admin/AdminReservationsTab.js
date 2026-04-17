@@ -228,7 +228,8 @@ export default function AdminReservationsTab() {
   return (
     <View style={[styles.container, { backgroundColor: activeTheme.colors.background }]}>
       <MeshBackground colors={activeTheme.colors.mesh} />
-      <View style={[styles.floatingHeader, { backgroundColor: 'transparent', borderBottomWidth: 0 }]} pointerEvents="box-none">
+      {/* HEADER */}
+      <View style={[styles.floatingHeader, { backgroundColor: activeTheme.colors.mesh[0], borderBottomWidth: 0 }]} pointerEvents="box-none">
         <SafeAreaView edges={['top']} style={{ flex: 0 }}>
             <View style={styles.headerContent}>
                 <View>
@@ -268,6 +269,12 @@ export default function AdminReservationsTab() {
               <FilterButton id="historico" label="Histórico" icon="archive-outline" />
             </ScrollView>
         </SafeAreaView>
+        {/* Scroll Mask - Gradiente para desvanecer o conteúdo com a cor do topo do Mesh */}
+        <LinearGradient
+            colors={[activeTheme.colors.mesh[0], 'transparent']}
+            style={{ position: 'absolute', bottom: -60, left: 0, right: 0, height: 60 }}
+            pointerEvents="none"
+        />
       </View>
 
       <FlatList

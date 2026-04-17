@@ -126,36 +126,48 @@ export default function ReservationsTab({ selectedApartment, navigate }) {
   }
 
   return (
-    <SafeAreaView style={[styles.container, { backgroundColor: activeTheme.colors.background }]}>
+    <View style={styles.container}>
       <MeshBackground colors={activeTheme.colors.mesh} />
-      <View style={styles.header}>
-          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 15 }}>
-              <TouchableOpacity 
-                onPress={() => navigate('dashboard')}
-                style={[styles.backBtn, { backgroundColor: activeTheme.colors.surfaceVariant, borderColor: activeTheme.colors.border }]}
-              >
-                  <Image 
-                    source={require('../../../assets/icons/chevron_back_active.png')} 
-                    style={{ width: 18, height: 18 }} 
-                    resizeMode="contain" 
-                  />
-              </TouchableOpacity>
-              <View>
-                  <Text style={[styles.headerTitle, { color: activeTheme.colors.text }]}>Reservas</Text>
-                  <Text style={[styles.headerSub, { color: activeTheme.colors.primary }]}>HISTÓRICO DO IMÓVEL</Text>
-              </View>
-          </View>
-          <TouchableOpacity 
-            activeOpacity={0.7}
-            onPress={() => setShowGuestModal(true)} 
-            style={[styles.headerBtn, { backgroundColor: activeTheme.colors.surfaceVariant, borderColor: activeTheme.colors.border }]}
-          >
-              <Image 
-                source={require('../../../assets/icons/person_active.png')} 
-                style={{ width: 22, height: 22 }} 
-                resizeMode="contain" 
-              />
-          </TouchableOpacity>
+      
+      {/* HEADER */}
+      <View style={[styles.floatingHeader, { backgroundColor: activeTheme.colors.mesh[0] }]} pointerEvents="box-none">
+        <SafeAreaView edges={['top']}>
+            <View style={styles.header}>
+                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 15 }}>
+                    <TouchableOpacity 
+                        onPress={() => navigate('dashboard')}
+                        style={[styles.backBtn, { backgroundColor: activeTheme.colors.surfaceVariant, borderColor: activeTheme.colors.border }]}
+                    >
+                        <Image 
+                            source={require('../../../assets/icons/chevron_back_active.png')} 
+                            style={{ width: 18, height: 18 }} 
+                            resizeMode="contain" 
+                        />
+                    </TouchableOpacity>
+                    <View>
+                        <Text style={[styles.headerTitle, { color: activeTheme.colors.text }]}>Reservas</Text>
+                        <Text style={[styles.headerSub, { color: activeTheme.colors.primary }]}>HISTÓRICO DO IMÓVEL</Text>
+                    </View>
+                </View>
+                <TouchableOpacity 
+                    activeOpacity={0.7}
+                    onPress={() => setShowGuestModal(true)} 
+                    style={[styles.headerBtn, { backgroundColor: activeTheme.colors.surfaceVariant, borderColor: activeTheme.colors.border }]}
+                >
+                    <Image 
+                        source={require('../../../assets/icons/person_active.png')} 
+                        style={{ width: 22, height: 22 }} 
+                        resizeMode="contain" 
+                    />
+                </TouchableOpacity>
+            </View>
+        </SafeAreaView>
+        {/* Scroll Mask - Gradiente para desvanecer o conteúdo com a cor do topo do Mesh */}
+        <LinearGradient
+            colors={[activeTheme.colors.mesh[0], 'transparent']}
+            style={{ position: 'absolute', bottom: -60, left: 0, right: 0, height: 60 }}
+            pointerEvents="none"
+        />
       </View>
 
       <FlatList
@@ -168,7 +180,7 @@ export default function ReservationsTab({ selectedApartment, navigate }) {
             onPress={(r) => { setEditingReservation(r); setShowRequestModal(true); }} 
           />
         )}
-        contentContainerStyle={styles.listContent}
+        contentContainerStyle={[styles.listContent, { paddingTop: 130 }]}
         showsVerticalScrollIndicator={false}
         refreshControl={
             <RefreshControl 
@@ -259,7 +271,7 @@ export default function ReservationsTab({ selectedApartment, navigate }) {
         onClose={() => setShowGuestModal(false)}
         onSuccess={() => { setShowGuestModal(false); Alert.alert('✅ Sucesso', 'Hóspede cadastrado!'); }}
       />
-    </SafeAreaView>
+    </View>
   );
 }
 
@@ -273,7 +285,14 @@ const styles = StyleSheet.create({
     alignItems: 'center', 
     paddingHorizontal: 25, 
     paddingTop: 10,
-    paddingBottom: 25 
+    paddingBottom: 20 
+  },
+  floatingHeader: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    zIndex: 100,
   },
   headerTitle: { fontSize: 28, fontWeight: '800', letterSpacing: -0.5 },
   headerSub: { fontSize: 10, fontWeight: '700', letterSpacing: 2 },

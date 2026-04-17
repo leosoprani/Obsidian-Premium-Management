@@ -11,6 +11,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import * as Font from 'expo-font';
 import * as SplashScreen from 'expo-splash-screen';
 import * as Device from 'expo-device';
+import { GestureHandlerRootView, PanGestureHandler, State } from 'react-native-gesture-handler';
 import Constants from 'expo-constants';
 // Import Notifications conditionally later to avoid SDK 53 Expo Go crashes
 
@@ -229,9 +230,27 @@ const AdminTabNavigator = React.memo(({ onLogout, unreadCounts, onReadChat, onTa
         }
     };
 
+    const onGestureEvent = (event) => {
+        if (event.nativeEvent.translationX > 80 && event.nativeEvent.state === State.END) {
+            // Swipe Right -> Previous Tab
+            const idx = ADMIN_TABS.findIndex(t => t.key === activeTab);
+            if (idx > 0) handleMainTabPress(ADMIN_TABS[idx - 1].key);
+        } else if (event.nativeEvent.translationX < -80 && event.nativeEvent.state === State.END) {
+            // Swipe Left -> Next Tab
+            const idx = ADMIN_TABS.findIndex(t => t.key === activeTab);
+            if (idx < ADMIN_TABS.length - 1) handleMainTabPress(ADMIN_TABS[idx + 1].key);
+        }
+    };
+
     return (
-        <View style={styles.appContainer}>
-            <View style={{ flex: 1, paddingTop: insets.top }}>{renderScreen()}</View>
+        <GestureHandlerRootView style={styles.appContainer}>
+            <PanGestureHandler 
+                onHandlerStateChange={onGestureEvent} 
+                activeOffsetX={[-30, 30]} // Threshold for horizontal swipe
+                failOffsetY={[-15, 15]}    // Threshold for vertical vs horizontal
+            >
+                <View style={{ flex: 1, paddingTop: insets.top }}>{renderScreen()}</View>
+            </PanGestureHandler>
             <TabBar 
                 tabs={ADMIN_TABS} 
                 activeTab={activeTab} 
@@ -239,7 +258,7 @@ const AdminTabNavigator = React.memo(({ onLogout, unreadCounts, onReadChat, onTa
                 insets={insets} 
                 unreadCounts={unreadCounts}
             />
-        </View>
+        </GestureHandlerRootView>
     );
 });
 
@@ -267,8 +286,18 @@ const OwnerTabNavigator = React.memo(({ onLogout, username, apartments: initialA
     }
   };
 
+  const onGestureEvent = (event) => {
+    if (event.nativeEvent.translationX > 80 && event.nativeEvent.state === State.END) {
+        const idx = OWNER_TABS.findIndex(t => t.key === activeTab);
+        if (idx > 0) handleTabPress(OWNER_TABS[idx - 1].key);
+    } else if (event.nativeEvent.translationX < -80 && event.nativeEvent.state === State.END) {
+        const idx = OWNER_TABS.findIndex(t => t.key === activeTab);
+        if (idx < OWNER_TABS.length - 1) handleTabPress(OWNER_TABS[idx + 1].key);
+    }
+  };
+
   return (
-    <View style={styles.appContainer}>
+    <GestureHandlerRootView style={styles.appContainer}>
       <StatusBar style="light" />
       
       {/* Property Switcher - Header for Owners */}
@@ -290,7 +319,14 @@ const OwnerTabNavigator = React.memo(({ onLogout, username, apartments: initialA
         </View>
       )}
 
-      <View style={{ flex: 1, paddingTop: initialApts.length > 1 ? 0 : insets.top }}>{renderScreen()}</View>
+      <PanGestureHandler 
+        onHandlerStateChange={onGestureEvent}
+        activeOffsetX={[-30, 30]}
+        failOffsetY={[-15, 15]}
+      >
+        <View style={{ flex: 1, paddingTop: initialApts.length > 1 ? 0 : insets.top }}>{renderScreen()}</View>
+      </PanGestureHandler>
+
       <TabBar 
         tabs={OWNER_TABS} 
         activeTab={activeTab} 
@@ -298,7 +334,7 @@ const OwnerTabNavigator = React.memo(({ onLogout, username, apartments: initialA
         insets={insets} 
         unreadCounts={unreadCounts}
       />
-    </View>
+    </GestureHandlerRootView>
   );
 });
 
@@ -583,20 +619,22 @@ export default function App() {
   const activeTheme = THEMES[appearance]?.[palette] || THEMES.dark.obsidian;
 
   return (
-    <TabBarProvider>
-      <ThemeContext.Provider value={{ 
-          theme: activeTheme, 
-          appearance, 
-          palette, 
-          setAppearance: handleSetAppearance, 
-          setPalette: handleSetPalette,
-          toggleTheme 
-      }}>
-        <SafeAreaProvider>
-          <AppContent />
-        </SafeAreaProvider>
-      </ThemeContext.Provider>
-    </TabBarProvider>
+    <GestureHandlerRootView style={{ flex: 1 }}>
+      <TabBarProvider>
+        <ThemeContext.Provider value={{ 
+            theme: activeTheme, 
+            appearance, 
+            palette, 
+            setAppearance: handleSetAppearance, 
+            setPalette: handleSetPalette,
+            toggleTheme 
+        }}>
+          <SafeAreaProvider>
+            <AppContent />
+          </SafeAreaProvider>
+        </ThemeContext.Provider>
+      </TabBarProvider>
+    </GestureHandlerRootView>
   );
 }
 

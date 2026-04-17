@@ -5,6 +5,7 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { BlurView } from 'expo-blur';
+import { LinearGradient } from 'expo-linear-gradient';
 import api from '../../services/api';
 import { theme } from '../../styles/theme';
 import { ThemeContext } from '../../styles/ThemeContext';
@@ -88,31 +89,42 @@ export default function AdminFinanceTab({ onBack }) {
   return (
     <View style={[styles.container, { backgroundColor: activeTheme.colors.background }]}>
       <MeshBackground colors={activeTheme.colors.mesh} />
-      <View style={styles.header}>
-        {onBack && (
-            <TouchableOpacity onPress={onBack} style={[styles.backBtn, { backgroundColor: activeTheme.colors.glass, borderColor: activeTheme.colors.glassBorder,  }]}>
-                <Image source={require('../../../assets/icons/chevron_back_active.png')} style={{ width: 24, height: 24, tintColor: activeTheme.colors.primary}} resizeMode="contain" />
-            </TouchableOpacity>
-        )}
-        <View style={{ flex: 1, marginLeft: onBack ? 15 : 0 }}>
-            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
-              <Text style={[styles.title, { color: activeTheme.colors.text }]}>Financeiro</Text>
-               {isOfflineData && (
-                <View style={[styles.offlineBadge, { backgroundColor: activeTheme.colors.warning + '20' }]}>
-                  <Image source={require('../../../assets/icons/offline_active.png')} style={{ width: 12, height: 12, tintColor: activeTheme.colors.warning }} resizeMode="contain" />
+      {/* HEADER */}
+      <View style={[styles.floatingHeader, { backgroundColor: activeTheme.colors.mesh[0] }]} pointerEvents="box-none">
+        <SafeAreaView edges={['top']}>
+          <View style={styles.header}>
+            {onBack && (
+                <TouchableOpacity onPress={onBack} style={[styles.backBtn, { backgroundColor: activeTheme.colors.glass, borderColor: activeTheme.colors.glassBorder,  }]}>
+                    <Image source={require('../../../assets/icons/chevron_back_active.png')} style={{ width: 24, height: 24, tintColor: activeTheme.colors.primary}} resizeMode="contain" />
+                </TouchableOpacity>
+            )}
+            <View style={{ flex: 1, marginLeft: onBack ? 15 : 0 }}>
+                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+                  <Text style={[styles.title, { color: activeTheme.colors.text }]}>Financeiro</Text>
+                   {isOfflineData && (
+                    <View style={[styles.offlineBadge, { backgroundColor: activeTheme.colors.warning + '20' }]}>
+                      <Image source={require('../../../assets/icons/offline_active.png')} style={{ width: 12, height: 12, tintColor: activeTheme.colors.warning }} resizeMode="contain" />
+                    </View>
+                  )}
                 </View>
-              )}
+                <Text style={[styles.sub, { color: activeTheme.isDark ? activeTheme.colors.error : activeTheme.colors.textSecondary }]}>GESTÃO DE DESPESAS</Text>
             </View>
-            <Text style={[styles.sub, { color: activeTheme.isDark ? activeTheme.colors.error : activeTheme.colors.textSecondary }]}>GESTÃO DE DESPESAS</Text>
-        </View>
-        <View style={{ borderRadius: 16, overflow: 'hidden' }}>
-            <TouchableOpacity style={[styles.addBtn, { backgroundColor: activeTheme.colors.primary }]} onPress={() => setShowModal(true)}>
-                <Image source={require('../../../assets/icons/add_white.png')} style={{ width: 24, height: 24, tintColor: '#fff' }} resizeMode="contain" />
-            </TouchableOpacity>
-        </View>
+            <View style={{ borderRadius: 16, overflow: 'hidden' }}>
+                <TouchableOpacity style={[styles.addBtn, { backgroundColor: activeTheme.colors.primary }]} onPress={() => setShowModal(true)}>
+                    <Image source={require('../../../assets/icons/add_white.png')} style={{ width: 24, height: 24, tintColor: '#fff' }} resizeMode="contain" />
+                </TouchableOpacity>
+            </View>
+          </View>
+        </SafeAreaView>
+        {/* Scroll Mask - Gradiente para desvanecer o conteúdo com a cor do topo do Mesh */}
+        <LinearGradient
+            colors={[activeTheme.colors.mesh[0], 'transparent']}
+            style={{ position: 'absolute', bottom: -60, left: 0, right: 0, height: 60 }}
+            pointerEvents="none"
+        />
       </View>
 
-      <View style={styles.summarySection}>
+      <View style={[styles.summarySection, { marginTop: 150 }]}>
       <View style={styles.summaryWrapper}>
         <View style={[styles.summary, { backgroundColor: 'rgba(255,255,255,0.04)', borderColor: 'transparent', borderWidth: 0 }]}>
             <Text style={[styles.summaryLabel, { color: activeTheme.colors.textSecondary }]}>Total de Saídas</Text>
@@ -147,7 +159,14 @@ export default function AdminFinanceTab({ onBack }) {
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: theme.colors.background },
   centered: { flex: 1, justifyContent: 'center', alignItems: 'center' },
-  header: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 25, paddingTop: 60, paddingBottom: 20 },
+  header: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 25, paddingTop: 10, paddingBottom: 20 },
+  floatingHeader: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    zIndex: 100,
+  },
   summarySection: { paddingHorizontal: 25, marginBottom: 25 },
   title: { color: theme.colors.text, fontSize: 28, fontWeight: '800', letterSpacing: -1 },
   sub: { color: theme.colors.error, fontSize: 10, fontWeight: '900', letterSpacing: 2 },

@@ -315,24 +315,34 @@ export default function ChatTab({ username: usernameProp, onRead, selectedApartm
   return (
     <View style={{ flex: 1 }}>
       <MeshBackground colors={activeTheme.colors.mesh} />
-      <SafeAreaView edges={['top', 'bottom']} style={[styles.container, { backgroundColor: 'transparent' }]}>
-        <View style={[styles.header, { borderBottomColor: activeTheme.colors.glassBorder, backgroundColor: 'transparent' }]}>
-          <View style={styles.headerContent}>
-              <View style={styles.avatarWrap}>
-                  <LinearGradient 
-                      colors={[activeTheme.colors.primary, '#0055ff']} 
-                      style={styles.avatar}
-                  >
-                      <Image source={require('../../../assets/icons/check_white.png')} style={{ width: 20, height: 20 }} resizeMode="contain" />
-                  </LinearGradient>
-                  <View style={[styles.statusDot, { backgroundColor: activeTheme.colors.secondary, borderColor: activeTheme.colors.background }]} />
-              </View>
-              <View>
-                  <Text style={[styles.headerTitle, { color: activeTheme.colors.text }]}>Suporte</Text>
-                  <Text style={styles.headerStatusText}>ADMINISTRAÇÃO ONLINE</Text>
-              </View>
+      {/* HEADER */}
+      <View style={[styles.floatingHeader, { backgroundColor: activeTheme.colors.mesh[0] }]} pointerEvents="box-none">
+        <SafeAreaView edges={['top']}>
+          <View style={[styles.header, { borderBottomColor: activeTheme.colors.glassBorder, backgroundColor: 'transparent' }]}>
+            <View style={styles.headerContent}>
+                <View style={styles.avatarWrap}>
+                    <LinearGradient 
+                        colors={[activeTheme.colors.primary, '#0055ff']} 
+                        style={styles.avatar}
+                    >
+                        <Image source={require('../../../assets/icons/check_white.png')} style={{ width: 20, height: 20 }} resizeMode="contain" />
+                    </LinearGradient>
+                    <View style={[styles.statusDot, { backgroundColor: activeTheme.colors.secondary, borderColor: activeTheme.colors.background }]} />
+                </View>
+                <View>
+                    <Text style={[styles.headerTitle, { color: activeTheme.colors.text }]}>Suporte</Text>
+                    <Text style={styles.headerStatusText}>ADMINISTRAÇÃO ONLINE</Text>
+                </View>
+            </View>
           </View>
-        </View>
+        </SafeAreaView>
+        {/* Scroll Mask - Gradiente para desvanecer o conteúdo com a cor do topo do Mesh */}
+        <LinearGradient
+            colors={[activeTheme.colors.mesh[0], 'transparent']}
+            style={{ position: 'absolute', bottom: -60, left: 0, right: 0, height: 60 }}
+            pointerEvents="none"
+        />
+      </View>
 
         <KeyboardAvoidingView 
           style={{ flex: 1 }} 
@@ -351,7 +361,7 @@ export default function ChatTab({ username: usernameProp, onRead, selectedApartm
                       onLongPress={handleLongPressMessage}
                   />
               )}
-              contentContainerStyle={styles.listContent}
+              contentContainerStyle={[styles.listContent, { paddingTop: 100 }]}
               showsVerticalScrollIndicator={false}
               onScroll={handleScroll}
               scrollEventThrottle={16}
@@ -404,7 +414,7 @@ export default function ChatTab({ username: usernameProp, onRead, selectedApartm
               </TouchableOpacity>
           </View>
         </KeyboardAvoidingView>
-      </SafeAreaView>
+
 
       {/* Full Screen Image Modal */}
       <Modal visible={!!fullScreenImage} transparent animationType="fade">
@@ -436,7 +446,13 @@ const styles = StyleSheet.create({
   
   header: { 
     paddingBottom: 12, 
-    borderBottomWidth: 1, 
+  },
+  floatingHeader: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    zIndex: 100,
   },
   headerContent: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 24, gap: 12 },
   avatarWrap: { position: 'relative' },
