@@ -231,9 +231,9 @@ export default function OwnerDashboard({ navigate }) {
       {/* HEADER */}
       <View style={[styles.floatingHeader]} pointerEvents="box-none">
         <BlurView 
-            intensity={Platform.OS === 'ios' ? 80 : 30} 
+            intensity={Platform.OS === 'ios' ? 80 : 40} 
             tint={isDark ? "dark" : "light"} 
-            style={[StyleSheet.absoluteFill, Platform.OS === 'android' && { backgroundColor: isDark ? 'rgba(5, 10, 20, 0.85)' : 'rgba(242, 242, 247, 0.85)' }]} 
+            style={[StyleSheet.absoluteFill, Platform.OS === 'android' && { backgroundColor: 'transparent' }]} 
         />
         <SafeAreaView edges={['top']}>
             <View style={styles.headerContent}>
@@ -255,10 +255,10 @@ export default function OwnerDashboard({ navigate }) {
                 </TouchableOpacity>
             </View>
         </SafeAreaView>
-        {/* Scroll Mask - Gradiente para desvanecer o conteúdo no topo */}
+        {/* Scroll Mask - Gradiente para desvanecer o conteúdo com a cor do topo do Mesh */}
         <LinearGradient
-            colors={[activeTheme.colors.background, 'transparent']}
-            style={{ position: 'absolute', bottom: -60, left: 0, right: 0, height: 60 }}
+            colors={[activeTheme.colors.mesh[0], 'transparent']}
+            style={{ position: 'absolute', bottom: -100, left: 0, right: 0, height: 100 }}
             pointerEvents="none"
         />
       </View>
