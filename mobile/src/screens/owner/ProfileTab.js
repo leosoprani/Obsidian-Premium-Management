@@ -245,12 +245,7 @@ export default function ProfileTab({ onLogout, navigate }) {
     <View style={styles.container}>
       <MeshBackground colors={activeTheme.colors.mesh} />
       {/* HEADER */}
-      <View style={[styles.floatingHeader]} pointerEvents="box-none">
-        <BlurView 
-            intensity={Platform.OS === 'ios' ? 80 : 40} 
-            tint={isDark ? "dark" : "light"} 
-            style={[StyleSheet.absoluteFill, Platform.OS === 'android' && { backgroundColor: 'transparent' }]} 
-        />
+      <View style={[styles.floatingHeader, { backgroundColor: activeTheme.colors.mesh[0] }]} pointerEvents="box-none">
         <SafeAreaView edges={['top']}>
             <View style={styles.headerContent}>
                 <View style={{ flexDirection: 'row', alignItems: 'center', gap: 15 }}>
@@ -282,10 +277,10 @@ export default function ProfileTab({ onLogout, navigate }) {
                 </TouchableOpacity>
             </View>
         </SafeAreaView>
-        {/* Scroll Mask - Gradiente para desvanecer o conteúdo no topo */}
+        {/* Scroll Mask - Gradiente para desvanecer o conteúdo com a cor do topo do Mesh */}
         <LinearGradient
             colors={[activeTheme.colors.mesh[0], 'transparent']}
-            style={{ position: 'absolute', bottom: -100, left: 0, right: 0, height: 100 }}
+            style={{ position: 'absolute', bottom: -60, left: 0, right: 0, height: 60 }}
             pointerEvents="none"
         />
       </View>
