@@ -2409,13 +2409,25 @@ export function renderNotifications(notifications) {
  * @param {Array} guests - Array de todos os hóspedes.
  */
 export function renderPendingApprovals(reservations, guests) {
+    console.log('[UI] renderPendingApprovals called with:', {
+        reservationsCount: reservations?.length,
+        guestsCount: guests?.length
+    });
     const container = document.getElementById('pending-approvals-container');
-    if (!container) return;
+    if (!container) {
+        console.error('[UI] Error: pending-approvals-container not found!');
+        return;
+    }
 
     if (!Array.isArray(reservations)) {
+        console.warn('[UI] Reservations is not an array:', reservations);
         container.innerHTML = `<p class="text-outline col-span-full text-center">Erro ao carregar reservas.</p>`;
         return;
     }
+
+    // Debug: ver todos os status presentes nas reservas
+    const allStatuses = [...new Set(reservations.map(r => r.status))];
+    console.log('[UI] All reservation statuses in memory:', allStatuses);
 
     const pending = reservations.filter(res => res.status === 'pending-approval').sort((a, b) => {
         const dateA = new Date(a.checkin || 0);
@@ -2424,6 +2436,8 @@ export function renderPendingApprovals(reservations, guests) {
     });
 
     container.innerHTML = '';
+    console.log(`[UI] Filtered pending-approval reservations: ${pending.length}`);
+
     if (pending.length === 0) {
         container.innerHTML = `<p class="text-outline col-span-full text-center p-12">Nenhuma reserva aguardando aprovação.</p>`;
         return;

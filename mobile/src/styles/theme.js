@@ -1,3 +1,5 @@
+import { Platform } from 'react-native';
+
 const baseSpacing = { xs: 4, sm: 8, md: 16, lg: 24, xl: 32, xxl: 48 };
 const baseBorderRadius = { sm: 8, md: 12, lg: 20, xl: 28, xxl: 35 };
 
@@ -38,9 +40,9 @@ export const THEMES = {
         mesh: PALETTES.obsidian.mesh,
       },
       shadows: {
-        soft: { shadowColor: '#000', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.3, shadowRadius: 8, elevation: 4 },
-        deep: { shadowColor: '#000', shadowOffset: { width: 0, height: 12 }, shadowOpacity: 0.5, shadowRadius: 20, elevation: 10 },
-        primary: { shadowColor: PALETTES.obsidian.primary, shadowOffset: { width: 0, height: 8 }, shadowOpacity: 0.3, shadowRadius: 15, elevation: 8 }
+        soft: { shadowColor: '#000', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.3, shadowRadius: 8, elevation: 4, ...Platform.select({ web: { boxShadow: '0px 4px 8px rgba(0,0,0,0.3)' } }) },
+        deep: { shadowColor: '#000', shadowOffset: { width: 0, height: 12 }, shadowOpacity: 0.5, shadowRadius: 20, elevation: 10, ...Platform.select({ web: { boxShadow: '0px 12px 20px rgba(0,0,0,0.5)' } }) },
+        primary: { shadowColor: PALETTES.obsidian.primary, shadowOffset: { width: 0, height: 8 }, shadowOpacity: 0.3, shadowRadius: 15, elevation: 8, ...Platform.select({ web: { boxShadow: `0px 8px 15px ${PALETTES.obsidian.primary}4D` } }) }
       },
       spacing: baseSpacing,
       borderRadius: baseBorderRadius,
@@ -65,9 +67,9 @@ export const THEMES = {
         mesh: PALETTES.emerald.mesh,
       },
       shadows: {
-        soft: { shadowColor: '#000', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.3, shadowRadius: 8, elevation: 4 },
-        deep: { shadowColor: '#000', shadowOffset: { width: 0, height: 12 }, shadowOpacity: 0.5, shadowRadius: 20, elevation: 10 },
-        primary: { shadowColor: PALETTES.emerald.primary, shadowOffset: { width: 0, height: 8 }, shadowOpacity: 0.3, shadowRadius: 15, elevation: 8 }
+        soft: { shadowColor: '#000', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.3, shadowRadius: 8, elevation: 4, ...Platform.select({ web: { boxShadow: '0px 4px 8px rgba(0,0,0,0.3)' } }) },
+        deep: { shadowColor: '#000', shadowOffset: { width: 0, height: 12 }, shadowOpacity: 0.5, shadowRadius: 20, elevation: 10, ...Platform.select({ web: { boxShadow: '0px 12px 20px rgba(0,0,0,0.5)' } }) },
+        primary: { shadowColor: PALETTES.emerald.primary, shadowOffset: { width: 0, height: 8 }, shadowOpacity: 0.3, shadowRadius: 15, elevation: 8, ...Platform.select({ web: { boxShadow: `0px 8px 15px ${PALETTES.emerald.primary}4D` } }) }
       },
       spacing: baseSpacing,
       borderRadius: baseBorderRadius,
@@ -94,9 +96,9 @@ export const THEMES = {
         mesh: ['#DFDFE6', '#D1D1D6', '#F0F0F5'],
       },
       shadows: {
-        soft: { shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.05, shadowRadius: 10, elevation: 2 },
-        deep: { shadowColor: '#000', shadowOffset: { width: 0, height: 10 }, shadowOpacity: 0.1, shadowRadius: 20, elevation: 5 },
-        primary: { shadowColor: '#007AFF', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.2, shadowRadius: 8, elevation: 4 }
+        soft: { shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.05, shadowRadius: 10, elevation: 2, ...Platform.select({ web: { boxShadow: '0px 2px 10px rgba(0,0,0,0.05)' } }) },
+        deep: { shadowColor: '#000', shadowOffset: { width: 0, height: 10 }, shadowOpacity: 0.1, shadowRadius: 20, elevation: 5, ...Platform.select({ web: { boxShadow: '0px 10px 20px rgba(0,0,0,0.1)' } }) },
+        primary: { shadowColor: '#007AFF', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.2, shadowRadius: 8, elevation: 4, ...Platform.select({ web: { boxShadow: '0px 4px 8px rgba(0,122,255,0.2)' } }) }
       },
       spacing: baseSpacing,
       borderRadius: baseBorderRadius,
@@ -119,9 +121,9 @@ export const THEMES = {
         mesh: ['#DCFCE7', '#ECFDF5', '#F0FDF4'],
       },
       shadows: {
-        soft: { shadowColor: '#10b981', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.1, shadowRadius: 10, elevation: 2 },
-        deep: { shadowColor: '#064e3b', shadowOffset: { width: 0, height: 10 }, shadowOpacity: 0.15, shadowRadius: 20, elevation: 5 },
-        primary: { shadowColor: '#10b981', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.2, shadowRadius: 8, elevation: 4 }
+        soft: { shadowColor: '#10b981', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.1, shadowRadius: 10, elevation: 2, ...Platform.select({ web: { boxShadow: '0px 2px 10px rgba(16,185,129,0.1)' } }) },
+        deep: { shadowColor: '#064e3b', shadowOffset: { width: 0, height: 10 }, shadowOpacity: 0.15, shadowRadius: 20, elevation: 5, ...Platform.select({ web: { boxShadow: '0px 10px 20px rgba(6,78,59,0.15)' } }) },
+        primary: { shadowColor: '#10b981', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.2, shadowRadius: 8, elevation: 4, ...Platform.select({ web: { boxShadow: '0px 4px 8px rgba(16,185,129,0.2)' } }) }
       },
       spacing: baseSpacing,
       borderRadius: baseBorderRadius,

@@ -6,7 +6,7 @@ export const TabBarContext = createContext();
 export const TabBarProvider = ({ children }) => {
   const [isVisible, setIsVisible] = useState(true);
   const fadeAnim = useRef(new Animated.Value(1)).current;
-  
+
   const setTabBarVisible = useCallback((visible) => {
     if (visible === isVisible) return;
     setIsVisible(visible);

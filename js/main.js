@@ -102,22 +102,30 @@ document.addEventListener('DOMContentLoaded', () => {
             users:        () => skeleton.showTable('system-users-list-container', 6, 4),
             dashboard:    () => skeleton.showDashboard(),
         };
+        console.log(`[SwitchView] Switching to: ${viewName}`);
         if (containerMap[viewName]) {
+            console.log(`[SwitchView] Showing skeleton for: ${viewName}`);
             containerMap[viewName]();
         }
 
         // Para a aba de Aprovações, sempre busca dados frescos da API (ignora cache)
-        // Isso garante que aprovações recentes do proprietário apareçam imediatamente
         if (viewName === 'approvals') {
-            api.fetchInitialData().then(([freshGuests, freshReservations]) => {
+            console.log('[Approvals] Fetching fresh data...');
+            api.fetchInitialData().then(([freshGuests, freshReservations, freshEmployees, freshExpenses, freshProperties]) => {
+                console.log(`[Approvals] Data received. Reservations: ${freshReservations?.length}`);
                 window.app.state.guests = freshGuests;
                 window.app.state.reservations = freshReservations;
+                window.app.state.employees = freshEmployees;
+                window.app.state.expenses = freshExpenses;
+                window.app.state.properties = freshProperties;
+                
+                ui.updateApprovalsBadge();
                 window.app.renderCurrentView();
             }).catch(err => {
                 console.error('[Approvals] Erro ao buscar dados frescos:', err);
-                window.app.renderCurrentView(); // Renderiza com o que tiver
+                window.app.renderCurrentView(); // Renderiza com o que tiver (cache)
             });
-            return; // Não chama renderCurrentView imediatamente, espera os dados frescos
+            return;
         }
 
         // Renderiza o conteúdo real da view (substitui os skeletons automaticamente)

@@ -6,7 +6,7 @@ import { Platform } from 'react-native';
 // Para desenvolvimento local em emulador Android, use 10.0.2.2
 // Para iOS ou Web local, use localhost
 export const BASE_URL = __DEV__
-  ? 'http://192.168.0.220:3000' // IP local para testes em dispositivo físico
+  ? (Platform.OS === 'web' ? 'http://localhost:3000' : 'http://192.168.1.10:3000')
   : 'https://storey-luxor-web.onrender.com';
 
 const API_URL = `${BASE_URL}/api`;

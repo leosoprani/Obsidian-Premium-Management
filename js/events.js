@@ -517,9 +517,9 @@ export function setupEventListeners(app) {
 
     // Pre-preeche o usuário se salvo
     const savedUsername = localStorage.getItem('saved_username');
-    if (savedUsername) {
+    if (savedUsername && usernameInput) {
         usernameInput.value = savedUsername;
-        rememberMeCheckbox.checked = true;
+        if (rememberMeCheckbox) rememberMeCheckbox.checked = true;
     }
 
     // Alternar visibilidade da senha
@@ -540,16 +540,22 @@ export function setupEventListeners(app) {
 
     loginForm.addEventListener('submit', async (e) => {
         e.preventDefault();
-        const username = loginForm.elements.username.value;
-        const password = loginForm.elements.password.value;
-        const rememberMe = rememberMeCheckbox.checked;
-
-        loginError.textContent = '';
-
+        
         try {
+            // Busca segura de valores (aceita ID ou Nome)
+            const username = loginForm.elements.username?.value || document.getElementById('username')?.value;
+            const password = loginForm.elements.password?.value || document.getElementById('password')?.value;
+            const rememberMe = rememberMeCheckbox ? rememberMeCheckbox.checked : false;
+
+            if (!username || !password) {
+                alert('Por favor, preencha usuário e senha.');
+                return;
+            }
+
+            if (loginError) loginError.textContent = '';
+
             const data = await api.login(username, password);
             if (data.accessToken) {
-                // Salva ou remove o usuário baseado no "Lembrar"
                 if (rememberMe) {
                     localStorage.setItem('saved_username', username);
                 } else {
@@ -558,12 +564,16 @@ export function setupEventListeners(app) {
 
                 localStorage.setItem('authToken', data.accessToken);
                 document.getElementById('login-screen').classList.add('hidden');
-                document.getElementById('app').classList.remove('hidden'); // Re-inicializa a aplicação principal
-                window.app.main();
+                
+                // Força recarregamento para inicializar o app com o novo token
+                window.location.reload();
+            } else {
+                if (loginError) loginError.textContent = 'Erro ao realizar login. Verifique as credenciais.';
             }
         } catch (error) {
-            console.error('Falha no login:', error);
-            loginError.textContent = 'Usuário ou senha inválidos.';
+            console.error('Erro no Login:', error);
+            if (loginError) loginError.textContent = error.message || 'Falha na conexão com o servidor.';
+            alert('Falha no login: ' + (error.message || 'Erro desconhecido'));
         }
     });
 

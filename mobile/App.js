@@ -104,7 +104,7 @@ function TabBar({ tabs, activeTab, onTabPress, insets, unreadCounts }) {
     useEffect(() => {
         Animated.spring(scrollX, {
             toValue: activeIndex * tabWidth,
-            useNativeDriver: true,
+            useNativeDriver: Platform.OS !== 'web',
             friction: 8,
             tension: 40
         }).start();
@@ -162,9 +162,9 @@ function TabBar({ tabs, activeTab, onTabPress, insets, unreadCounts }) {
                                     source={isActive ? MENU_ICONS[tab.iconId].active : MENU_ICONS[tab.iconId].inactive} 
                                     style={{ 
                                       width: 22, 
-                                      height: 22, 
-                                      tintColor: isActive ? activeTheme.colors.primary : activeTheme.colors.textTertiary 
+                                      height: 22
                                     }}
+                                    tintColor={isActive ? activeTheme.colors.primary : activeTheme.colors.textTertiary}
                                     resizeMode="contain"
                                 />
                                 {badgeCount > 0 && (
@@ -358,30 +358,6 @@ function AppContent() {
 
   const [fontsLoaded] = Font.useFonts({});
 
-  useEffect(() => {
-    async function prepare() {
-      try {
-        await checkAuth();
-        try {
-          await registerForPushNotificationsAsync();
-        } catch (pushError) {
-          console.warn('Notification registration failed (likely Expo Go limitation):', pushError);
-        }
-      } catch (e) {
-        console.warn('Initial Auth Check Error:', e);
-      } finally {
-        setTimeout(() => setLoading(false), 800);
-      }
-    }
-    prepare();
-  }, [checkAuth, registerForPushNotificationsAsync]);
-
-  useEffect(() => {
-    if (!loading && fontsLoaded) {
-      SplashScreen.hideAsync().catch(() => {});
-    }
-  }, [loading, fontsLoaded]);
-
   const registerForPushNotificationsAsync = useCallback(async () => {
     if (!Device.isDevice || Constants.appOwnership === 'expo') return;
     
@@ -462,35 +438,84 @@ function AppContent() {
       const role  = await AsyncStorage.getItem('@user_role') || 'owner';
       const user  = await AsyncStorage.getItem('@user_username');
       const aptsStr = await AsyncStorage.getItem('@user_apartments');
-      const apts = aptsStr ? JSON.parse(aptsStr) : [];
+      
+      let apts = [];
+      if (aptsStr) {
+        try {
+          apts = JSON.parse(aptsStr);
+          if (!Array.isArray(apts)) apts = [];
+        } catch (e) {
+          console.warn('Failed to parse apartments from storage:', e);
+          apts = [];
+        }
+      }
 
       if (token) {
         setIsLoggedIn(true);
         setUserRole(role);
         setApartments(apts);
-        if (user) setUsername(user);
-        setupSocket(user, role);
+        if (user) setUsername(user || '');
+        setupSocket(user || 'guest', role);
       }
     } catch (e) {
       console.error('Auth check error:', e);
     }
   }, [setupSocket]);
 
+
+  useEffect(() => {
+    if (!loading && fontsLoaded) {
+      SplashScreen.hideAsync().catch(() => {});
+    }
+  }, [loading, fontsLoaded]);
+
+  useEffect(() => {
+    async function prepare() {
+      try {
+        await checkAuth();
+        try {
+          await registerForPushNotificationsAsync();
+        } catch (pushError) {
+          console.warn('Notification registration failed (likely Expo Go limitation):', pushError);
+        }
+      } catch (e) {
+        console.warn('Initial Auth Check Error:', e);
+      } finally {
+        setTimeout(() => setLoading(false), 800);
+      }
+    }
+    prepare();
+  }, [checkAuth, registerForPushNotificationsAsync]);
+
+
   // Removed redundant duplicate useEffect hook that were calling checkAuth again.
 
   const handleLogin = useCallback(async () => {
     console.log('--- Processing Login Success ---');
-    const role = await AsyncStorage.getItem('@user_role') || 'owner';
-    const user = await AsyncStorage.getItem('@user_username') || '';
-    const aptsStr = await AsyncStorage.getItem('@user_apartments');
-    const apts = aptsStr ? JSON.parse(aptsStr) : [];
-    
-    console.log(`Setting state -> Role: ${role}, User: ${user}`);
-    setUserRole(role);
-    setUsername(user);
-    setApartments(apts);
-    setIsLoggedIn(true);
-    setupSocket(user, role);
+    try {
+      const role = await AsyncStorage.getItem('@user_role') || 'owner';
+      const user = await AsyncStorage.getItem('@user_username') || '';
+      const aptsStr = await AsyncStorage.getItem('@user_apartments');
+      
+      let apts = [];
+      if (aptsStr) {
+        try {
+          apts = JSON.parse(aptsStr);
+          if (!Array.isArray(apts)) apts = [];
+        } catch (e) {
+          apts = [];
+        }
+      }
+      
+      console.log(`Setting state -> Role: ${role}, User: ${user}`);
+      setUserRole(role);
+      setUsername(user || '');
+      setApartments(apts);
+      setIsLoggedIn(true);
+      setupSocket(user || 'guest', role);
+    } catch (e) {
+      console.error('Login processing error:', e);
+    }
   }, [setupSocket]);
 
   const clearChatBadge = useCallback(() => setUnreadCounts(prev => ({ ...prev, chat: 0 })), []);
@@ -532,8 +557,8 @@ function AppContent() {
       return (
           <View style={[styles.loadingContainer, { backgroundColor: activeTheme.colors.background, padding: 40 }]}>
               <View style={[styles.errorCard, { backgroundColor: activeTheme.colors.glass, borderColor: activeTheme.colors.glassBorder }]}>
-                  <View style={[styles.errorIconCircle, { backgroundColor: 'rgba(255,59,48,0.1)' }]}>
-                    <Image source={require('./assets/icons/maintenance_active.png')} style={{ width: 32, height: 32, tintColor: '#ff3b30' }} resizeMode="contain" />
+                    <View style={[styles.errorIconCircle, { backgroundColor: 'rgba(255,59,48,0.1)' }]}>
+                    <Image source={require('./assets/icons/maintenance_active.png')} style={{ width: 32, height: 32 }} tintColor="#ff3b30" resizeMode="contain" />
                   </View>
                   <Text style={[styles.errorTitle, { color: activeTheme.colors.text }]}>Falha de Conexão</Text>
                   <Text style={[styles.errorSub, { color: activeTheme.colors.textSecondary }]}>Não foi possível estabelecer contato com o servidor Obsidian.</Text>

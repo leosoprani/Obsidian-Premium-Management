@@ -8,6 +8,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
 import { BlurView } from 'expo-blur';
 import api from '../../services/api';
+import socketService from '../../services/socket';
 import { theme } from '../../styles/theme';
 import { ThemeContext } from '../../styles/ThemeContext';
 import AddGuestModal from './AddGuestModal';
@@ -102,7 +103,21 @@ export default function ReservationsTab({ selectedApartment, navigate }) {
     }
   }, [selectedApartment]);
 
-  useEffect(() => { loadReservations(); }, [loadReservations]);
+  useEffect(() => { 
+    loadReservations(); 
+    
+    // Conecta e ouve atualizações em tempo real
+    socketService.connect();
+    const unsubscribe = socketService.subscribe((data) => {
+      // Se algo foi deletado ou alterado no Admin, recarrega a lista
+      if (data.action === 'delete_reservation' || data.action === 'delete_guest' || data.action === 'save_reservation') {
+        console.log(`[Socket] Recarregando reservas devido a ação: ${data.action}`);
+        loadReservations();
+      }
+    });
+
+    return () => unsubscribe();
+  }, [loadReservations]);
 
   const onSearch = (text) => {
     setSearchText(text);

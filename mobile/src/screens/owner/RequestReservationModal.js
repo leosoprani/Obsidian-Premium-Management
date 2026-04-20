@@ -322,7 +322,7 @@ export default function RequestReservationModal({ visible, onClose, initialData,
                 <View style={styles.glassContainer}>
                     <View style={styles.field}>
                       <View style={styles.labelRow}>
-                        <Image source={require('../../../assets/icons/dots_active.png')} style={{ width: 14, height: 14, tintColor: activeTheme.colors.primary }} resizeMode="contain" />
+                        <Image source={require('../../../assets/icons/dots_active.png')} style={{ width: 14, height: 14 }} tintColor={activeTheme.colors.primary} resizeMode="contain" />
                         <Text style={[styles.label, { color: activeTheme.colors.textTertiary }]}>N° DO APARTAMENTO</Text>
                       </View>
                       {isAdmin ? (
@@ -359,7 +359,7 @@ export default function RequestReservationModal({ visible, onClose, initialData,
                 <View style={styles.glassContainer}>
                     <View style={styles.field}>
                       <View style={styles.labelRow}>
-                        <Image source={require('../../../assets/icons/profile_active.png')} style={{ width: 14, height: 14, tintColor: activeTheme.colors.primary}} resizeMode="contain" />
+                        <Image source={require('../../../assets/icons/profile_active.png')} style={{ width: 14, height: 14 }} tintColor={activeTheme.colors.primary} resizeMode="contain" />
                         <Text style={[styles.label, { color: activeTheme.colors.textTertiary }]}>NOME DO HÓSPEDE</Text>
                       </View>
                       <TextInput
@@ -396,7 +396,7 @@ export default function RequestReservationModal({ visible, onClose, initialData,
                     <View style={styles.dateRow}>
                       <View style={styles.fieldHalf}>
                         <View style={styles.labelRow}>
-                            <Image source={require('../../../assets/icons/check_active.png')} style={{ width: 14, height: 14, tintColor: activeTheme.colors.primary }} resizeMode="contain" />
+                            <Image source={require('../../../assets/icons/check_active.png')} style={{ width: 14, height: 14 }} tintColor={activeTheme.colors.primary} resizeMode="contain" />
                             <Text style={[styles.label, { color: activeTheme.colors.textTertiary }]}>CHECK-IN</Text>
                         </View>
                         <Pressable onPress={() => { setShowStartPicker(true); setShowEndPicker(false); }}>
@@ -408,7 +408,7 @@ export default function RequestReservationModal({ visible, onClose, initialData,
                       <View style={styles.vertDivider} />
                       <View style={styles.fieldHalf}>
                         <View style={styles.labelRow}>
-                            <Image source={require('../../../assets/icons/arrow_forward_active.png')} style={{ width: 14, height: 14, tintColor: activeTheme.colors.primary, transform: [{ scaleX: -1 }] }} resizeMode="contain" />
+                            <Image source={require('../../../assets/icons/arrow_forward_active.png')} style={{ width: 14, height: 14 }} tintColor={activeTheme.colors.primary} resizeMode="contain" />
                             <Text style={[styles.label, { color: activeTheme.colors.textTertiary }]}>CHECK-OUT</Text>
                         </View>
                         <Pressable onPress={() => { setShowEndPicker(true); setShowStartPicker(false); }}>
@@ -507,7 +507,7 @@ export default function RequestReservationModal({ visible, onClose, initialData,
                 <View style={styles.glassContainer}>
                     <View style={styles.field}>
                       <View style={styles.labelRow}>
-                        <Image source={require('../../../assets/icons/stats_active.png')} style={{ width: 14, height: 14, tintColor: activeTheme.colors.primary }} resizeMode="contain" />
+                        <Image source={require('../../../assets/icons/stats_active.png')} style={{ width: 14, height: 14 }} tintColor={activeTheme.colors.primary} resizeMode="contain" />
                         <Text style={[styles.label, { color: activeTheme.colors.textTertiary }]}>VALOR ESTIMADO (OPCIONAL)</Text>
                       </View>
                       <TextInput
@@ -542,7 +542,7 @@ export default function RequestReservationModal({ visible, onClose, initialData,
 
             <View style={[styles.infoBox, { borderColor: activeTheme.colors.primary + '30' }]}>
                 <View style={[styles.infoGlow, { backgroundColor: activeTheme.colors.primary }]} />
-                <Image source={require('../../../assets/icons/shield_active.png')} style={{ width: 24, height: 24, tintColor: activeTheme.colors.primary }} resizeMode="contain" />
+                <Image source={require('../../../assets/icons/shield_active.png')} style={{ width: 24, height: 24 }} tintColor={activeTheme.colors.primary} resizeMode="contain" />
                 <View style={{flex: 1}}>
                     <Text style={[styles.infoTitle, { color: activeTheme.colors.text }]}>Solicitação Segura</Text>
                     <Text style={[styles.infoText, { color: activeTheme.colors.textSecondary }]}>

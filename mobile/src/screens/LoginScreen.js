@@ -26,6 +26,33 @@ import { ThemeContext } from '../styles/ThemeContext';
 import MeshBackground from '../components/MeshBackground';
 
 const { width, height } = Dimensions.get('window');
+const isWeb = Platform.OS === 'web';
+
+// Fallback logic for Web where SecureStore is not available
+const secureStorage = {
+  getItem: async (key) => {
+    try {
+      if (isWeb) return await AsyncStorage.getItem(`@web_secure_${key}`);
+      return await SecureStore.getItemAsync(key);
+    } catch (e) {
+      return null;
+    }
+  },
+  setItem: async (key, value) => {
+    try {
+      if (isWeb) return await AsyncStorage.setItem(`@web_secure_${key}`, value);
+      return await SecureStore.setItemAsync(key, value);
+    } catch (e) {
+      console.warn('Storage error:', e);
+    }
+  },
+  deleteItem: async (key) => {
+    try {
+      if (isWeb) return await AsyncStorage.removeItem(`@web_secure_${key}`);
+      return await SecureStore.deleteItemAsync(key);
+    } catch (e) {}
+  }
+};
 
 export default function LoginScreen({ navigate }) {
   const [username, setUsername] = useState('');
@@ -43,15 +70,23 @@ export default function LoginScreen({ navigate }) {
   }, []);
 
   const checkBiometrics = async () => {
-    const compatible = await LocalAuthentication.hasHardwareAsync();
-    const enrolled = await LocalAuthentication.isEnrolledAsync();
-    setIsBiometricSupported(compatible && enrolled);
+    if (isWeb) {
+      setIsBiometricSupported(false);
+      return;
+    }
+    try {
+      const compatible = await LocalAuthentication.hasHardwareAsync();
+      const enrolled = await LocalAuthentication.isEnrolledAsync();
+      setIsBiometricSupported(compatible && enrolled);
+    } catch (e) {
+      setIsBiometricSupported(false);
+    }
   };
 
   const loadSavedUsername = async () => {
     try {
       const savedUser = await AsyncStorage.getItem('@saved_username');
-      const savedPass = await SecureStore.getItemAsync('saved_password');
+      const savedPass = await secureStorage.getItem('saved_password');
       if (savedUser) {
         setUsername(savedUser);
         setRememberMe(true);
@@ -78,15 +113,15 @@ export default function LoginScreen({ navigate }) {
       const { accessToken, role, apartments } = response.data;
       
       // Always save credentials for biometrics after successful login
-      await SecureStore.setItemAsync('biometric_user', trimmedUser);
-      await SecureStore.setItemAsync('biometric_pass', trimmedPass);
+      await secureStorage.setItem('biometric_user', trimmedUser);
+      await secureStorage.setItem('biometric_pass', trimmedPass);
 
       if (rememberMe) {
         await AsyncStorage.setItem('@saved_username', trimmedUser);
-        await SecureStore.setItemAsync('saved_password', trimmedPass);
+        await secureStorage.setItem('saved_password', trimmedPass);
       } else {
         await AsyncStorage.removeItem('@saved_username');
-        try { await SecureStore.deleteItemAsync('saved_password'); } catch(e){}
+        await secureStorage.deleteItem('saved_password');
       }
 
       await AsyncStorage.setItem('@auth_token', accessToken);
@@ -118,8 +153,8 @@ export default function LoginScreen({ navigate }) {
       });
 
       if (result.success) {
-        const savedUser = await SecureStore.getItemAsync('biometric_user');
-        const savedPass = await SecureStore.getItemAsync('biometric_pass');
+        const savedUser = await secureStorage.getItem('biometric_user');
+        const savedPass = await secureStorage.getItem('biometric_pass');
 
         if (savedUser && savedPass) {
           setUsername(savedUser);
@@ -132,10 +167,10 @@ export default function LoginScreen({ navigate }) {
           console.log(`Login Success! User: ${username}, Role: ${role}`);
           if (rememberMe) {
               await AsyncStorage.setItem('@saved_username', username);
-              await SecureStore.setItemAsync('saved_password', password);
+              await secureStorage.setItem('saved_password', password);
           } else {
               await AsyncStorage.removeItem('@saved_username');
-              try { await SecureStore.deleteItemAsync('saved_password'); } catch(e){}
+              await secureStorage.deleteItem('saved_password');
           }
 
           await AsyncStorage.setItem('@auth_token', accessToken);
@@ -356,9 +391,21 @@ const styles = StyleSheet.create({
     fontWeight: '900',
     color: '#fff',
     letterSpacing: -3,
-    textShadowColor: 'rgba(10, 132, 255, 0.1)',
-    textShadowOffset: { width: 0, height: 4 },
-    textShadowRadius: 4
+    ...Platform.select({
+      ios: {
+        textShadowColor: 'rgba(10, 132, 255, 0.1)',
+        textShadowOffset: { width: 0, height: 4 },
+        textShadowRadius: 4
+      },
+      android: {
+        textShadowColor: 'rgba(10, 132, 255, 0.1)',
+        textShadowOffset: { width: 0, height: 4 },
+        textShadowRadius: 4
+      },
+      web: {
+        textShadow: '0px 4px 4px rgba(10, 132, 255, 0.1)'
+      }
+    })
   },
   subtitleContainer: { flexDirection: 'row', alignItems: 'center', marginTop: -5, gap: 10 },
   brandSubtitle: {

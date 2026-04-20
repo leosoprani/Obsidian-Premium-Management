@@ -737,18 +737,37 @@ app.post('/api/reservations', authenticateToken, logActivity('save_reservation')
 });
 
 // Rota para deletar uma reserva
-app.delete('/api/reservations/:id', authenticateToken, logActivity('delete_reservation'), async (req, res) => { // logActivity estava aqui
+app.delete('/api/reservations/:id', authenticateToken, logActivity('delete_reservation'), async (req, res) => {
     try {
         const { id } = req.params;
-        const result = await db.collection('reservations').deleteOne({ id: id });
-        if (result.deletedCount === 0) {
+        
+        // 1. Busca a reserva para saber quem é o hóspede antes de deletar
+        const reservation = await db.collection('reservations').findOne({ id: id });
+        if (!reservation) {
             return res.status(404).json({ message: 'Reserva não encontrada' });
         }
 
-        // Emite WebSocket AFTER DB update
-        req.app.get('io').emit('data_updated', { action: 'delete_reservation', user: req.user.username });
+        const guestId = reservation.guestId;
 
-        res.status(200).json({ message: 'Reserva deletada com sucesso' });
+        // 2. Deleta a reserva
+        const result = await db.collection('reservations').deleteOne({ id: id });
+        
+        // 3. Verifica se o hóspede ainda tem outras reservas. 
+        // Se não tiver, deleta o hóspede também (Cascata solicitada pelo usuário)
+        if (guestId) {
+            const otherReservations = await db.collection('reservations').countDocuments({ guestId: guestId });
+            if (otherReservations === 0) {
+                console.log(`[Cascata] Removendo hóspede ${guestId} pois não possui mais reservas.`);
+                await db.collection('guests').deleteOne({ id: guestId });
+                // Avisa que um hóspede também foi removido
+                req.app.get('io').emit('data_updated', { action: 'delete_guest', id: guestId, user: req.user.username });
+            }
+        }
+
+        // Emite WebSocket AFTER DB update
+        req.app.get('io').emit('data_updated', { action: 'delete_reservation', id: id, user: req.user.username });
+
+        res.status(200).json({ message: 'Reserva deletada com sucesso (e hóspede em cascata se aplicável)' });
     } catch (error) {
         console.error('Erro ao deletar reserva:', error);
         res.status(500).json({ message: 'Erro ao deletar reserva', error: error.toString() });

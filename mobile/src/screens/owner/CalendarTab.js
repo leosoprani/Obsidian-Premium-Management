@@ -13,6 +13,8 @@ import { theme } from '../../styles/theme';
 import { ThemeContext } from '../../styles/ThemeContext';
 import RequestReservationModal from './RequestReservationModal';
 import { useTabBarScroll } from '../../hooks/useTabBarScroll';
+import { formatDateBR } from '../../utils/dateUtils';
+
 
 LocaleConfig.locales['pt-br'] = {
   monthNames: ['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'],
@@ -100,6 +102,7 @@ export default function CalendarTab({ selectedApartment }) {
 
     // 2. Mark Internal Reservations (Continuous Pill)
     reservations.forEach(r => {
+      if (!r.startDate || !r.endDate) return;
       const startStr = r.startDate.split('T')[0];
       const endStr = r.endDate.split('T')[0];
       const color = STATUS_COLORS[r.status] || activeTheme.colors.textTertiary;
@@ -123,6 +126,7 @@ export default function CalendarTab({ selectedApartment }) {
 
     // 3. Mark External Events
     externalEvents.forEach(e => {
+      if (!e.startDate || !e.endDate) return;
       const startStr = e.startDate.split('T')[0];
       const endStr = e.endDate.split('T')[0];
       const dotColor = e.platform === 'airbnb' ? '#FF5A5F' : '#003580';
@@ -255,11 +259,9 @@ export default function CalendarTab({ selectedApartment }) {
         {/* Scroll Mask - Gradiente para desvanecer o conteúdo com a cor do topo do Mesh */}
         <LinearGradient
             colors={[activeTheme.colors.mesh[0], 'transparent']}
-            style={{ position: 'absolute', bottom: -60, left: 0, right: 0, height: 60 }}
-            pointerEvents="none"
+            style={{ position: 'absolute', bottom: -60, left: 0, right: 0, height: 60, pointerEvents: 'none' }}
         />
       </View>
-
       <ScrollView
         showsVerticalScrollIndicator={false}
         contentContainerStyle={styles.scrollContent}
