@@ -2589,6 +2589,53 @@ export function renderChatList(users, searchTerm = '') {
 }
 
 /**
+ * Mostra uma lista de proprietários para iniciar uma nova conversa.
+ */
+export async function showOwnerSelector() {
+    const chatListModal = document.getElementById('chat-list-modal');
+    const container = document.getElementById('chat-list-container');
+    const title = chatListModal.querySelector('h3');
+    
+    title.textContent = 'Nova Conversa';
+    container.innerHTML = '<div class="p-8 text-center"><div class="loading-spinner mx-auto"></div></div>';
+
+    try {
+        // Busca proprietários do estado ou API
+        let owners = window.app.state.users.filter(u => u.role === 'owner');
+        
+        if (owners.length === 0) {
+            container.innerHTML = '<p class="p-4 text-center text-outline">Nenhum proprietário encontrado.</p>';
+            return;
+        }
+
+        container.innerHTML = owners.map(owner => {
+            const initial = owner.username.charAt(0).toUpperCase();
+            const apartments = owner.apartments ? owner.apartments.join(', ') : (owner.apartment || 'N/A');
+
+            return `
+                <div 
+                    class="flex items-center justify-between p-3 rounded-lg hover:bg-surface-variant dark:hover:bg-gray-700/50 cursor-pointer transition-colors"
+                    onclick="window.app.modals.closeChatListModal(); window.app.chat.openChatModal('${owner.username}')"
+                >
+                    <div class="flex items-center gap-3">
+                        <div class="w-10 h-10 rounded-full bg-primary/10 text-primary flex items-center justify-center font-bold text-lg">
+                            ${initial}
+                        </div>
+                        <div>
+                            <p class="font-semibold">${owner.username}</p>
+                            <p class="text-xs text-outline">Apto(s): ${apartments}</p>
+                        </div>
+                    </div>
+                    <span class="material-symbols-outlined text-outline">chevron_right</span>
+                </div>
+            `;
+        }).join('');
+    } catch (error) {
+        container.innerHTML = '<p class="p-4 text-center text-red-500">Erro ao carregar proprietários.</p>';
+    }
+}
+
+/**
  * Atualiza o estado de mensagens não lidas para um remetente específico.
  * @param {string} from - O nome de usuário do remetente.
  * @param {number} count - A nova contagem de mensagens não lidas.
@@ -2627,6 +2674,40 @@ export function updateChatUnreadIndicator() {
     if (adminBadge) adminBadge.classList.toggle('hidden', !hasAnyUnread);
     if (ownerBadge) ownerBadge.classList.toggle('hidden', !hasAnyUnread);
     if (ownerMobileBadge) ownerMobileBadge.classList.toggle('hidden', !hasAnyUnread);
+}
+
+/**
+ * Anexa as funções de UI ao objeto global da aplicação.
+ */
+export function attachUIFunctionsToWindow() {
+    if (!window.app) window.app = {};
+    if (!window.app.ui) window.app.ui = {};
+
+    window.app.ui.renderCalendar = renderCalendar;
+    window.app.ui.renderDashboardFinancialSummary = renderDashboardFinancialSummary;
+    window.app.ui.renderUpcomingEvents = renderUpcomingEvents;
+    window.app.ui.renderActiveReservations = renderActiveReservations;
+    window.app.ui.renderPendingReservations = renderPendingReservations;
+    window.app.ui.renderPendingApprovals = renderPendingApprovals;
+    window.app.ui.renderGuestsList = renderGuestsList;
+    window.app.ui.renderFinishedReservations = renderFinishedReservations;
+    window.app.ui.renderRecentGuests = renderRecentGuests;
+    window.app.ui.renderEmployeesList = renderEmployeesList;
+    window.app.ui.renderPropertiesList = renderPropertiesList;
+    window.app.ui.renderUsersList = renderUsersList;
+    window.app.ui.renderActivityLogs = renderActivityLogs;
+    window.app.ui.renderFinancialView = renderFinancialView;
+    window.app.ui.showApartmentDetails = showApartmentDetails;
+    window.app.ui.updateApprovalsBadge = updateApprovalsBadge;
+    window.app.ui.renderOccupancyChart = renderOccupancyChart;
+    window.app.ui.renderApartmentOccupancyChart = renderApartmentOccupancyChart;
+    window.app.ui.renderMonthlyTrendChart = renderMonthlyTrendChart;
+    window.app.ui.showToast = showToast;
+    window.app.ui.renderChatList = renderChatList;
+    window.app.ui.updateUnreadState = updateUnreadState;
+    window.app.ui.updateChatUnreadIndicator = updateChatUnreadIndicator;
+    window.app.ui.handleIncomingUnreadMessage = handleIncomingUnreadMessage;
+    window.app.ui.showOwnerSelector = showOwnerSelector;
 }
 
 /**

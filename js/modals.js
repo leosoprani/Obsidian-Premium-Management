@@ -902,6 +902,9 @@ export function closePropertyEditModal() {
 export function openChatListModal() {
     const modal = document.getElementById('chat-list-modal');
     const modalContent = modal.querySelector('.card');
+    const title = modal.querySelector('h3');
+    if (title) title.textContent = 'Conversas';
+    
     window.app.ui.renderChatList(window.app.state.users);
     modal.classList.remove('hidden');
     setTimeout(() => modalContent.classList.remove('opacity-0', '-translate-y-4'), 10);

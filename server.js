@@ -1204,6 +1204,17 @@ MongoClient.connect(mongoUrl, { serverSelectionTimeoutMS: 5000 })
             console.log(`Usuário "admin" verificado e senha sincronizada.`);
         }
 
+        // Listar todos os proprietários (para o administrador iniciar chats)
+        app.get('/api/owners', authenticateToken, async (req, res) => {
+            if (req.user.role !== 'admin') return res.status(403).json({ message: 'Acesso negado' });
+            try {
+                const owners = await db.collection('users').find({ role: 'owner' }).project({ username: 1, apartments: 1 }).toArray();
+                res.json(owners);
+            } catch (error) {
+                res.status(500).json({ message: error.message });
+            }
+        });
+
         // 5. Iniciar o servidor APENAS DEPOIS de conectar ao banco
         server.listen(port, () => {
             console.log(`Backend rodando em http://localhost:${port}`);

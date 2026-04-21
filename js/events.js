@@ -289,6 +289,30 @@ export function setupEventListeners(app) {
         adminChatBtn.addEventListener('click', () => modals.openChatListModal());
     }
 
+    const adminNewChatBtn = document.getElementById('admin-new-chat-btn');
+    if (adminNewChatBtn) {
+        adminNewChatBtn.addEventListener('click', () => window.app.ui.showOwnerSelector());
+    }
+
+    const chatListSearch = document.getElementById('chat-list-search');
+    if (chatListSearch) {
+        chatListSearch.addEventListener('input', (e) => {
+            const searchTerm = e.target.value;
+            // Se o título for 'Nova Conversa', filtra de forma diferente ou chama showOwnerSelector com filtro
+            const isNewChat = document.querySelector('#chat-list-modal h3').textContent === 'Nova Conversa';
+            if (isNewChat) {
+                // Implementação simples de busca na lista de seleção
+                const items = document.querySelectorAll('#chat-list-container > div');
+                items.forEach(item => {
+                    const text = item.textContent.toLowerCase();
+                    item.classList.toggle('hidden', !text.includes(searchTerm.toLowerCase()));
+                });
+            } else {
+                window.app.ui.renderChatList(window.app.state.users, searchTerm);
+            }
+        });
+    }
+
 
     // Submissão de formulários
     dom.reservationForm.addEventListener('submit', handlers.saveReservationHandler);

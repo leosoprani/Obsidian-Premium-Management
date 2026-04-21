@@ -30,6 +30,34 @@ export async function openChatModal(partnerUsername) {
     title.textContent = `Conversa com ${partnerUsername}`;
     partnerInput.value = partnerUsername;
 
+    const aptContext = document.getElementById('admin-chat-apartment-context');
+    const aptSelect = document.getElementById('chat-apartment-select');
+
+    // Se for admin, verifica se o parceiro tem múltiplos apartamentos
+    if (window.app.state.userRole === 'admin' && partnerUsername !== 'admin') {
+        const userObj = window.app.state.users.find(u => u.username === partnerUsername);
+        if (userObj && userObj.apartments && userObj.apartments.length > 1) {
+            aptContext.classList.remove('hidden');
+            aptSelect.innerHTML = userObj.apartments.map(apt => `<option value="${apt}">Apto ${apt}</option>`).join('');
+            
+            // Ao mudar o apartamento no dropdown, recarregar mensagens?
+            // Por enquanto, apenas garante que o valor selecionado seja usado no envio.
+            aptSelect.onchange = async () => {
+                const messages = await api.getMessages(partnerUsername);
+                renderChatMessages(messages);
+            };
+        } else if (userObj && (userObj.apartment || (userObj.apartments && userObj.apartments.length === 1))) {
+            // Se tiver apenas um, podemos esconder o seletor ou fixar o valor
+            aptContext.classList.add('hidden');
+            aptSelect.innerHTML = `<option value="${userObj.apartment || userObj.apartments[0]}">${userObj.apartment || userObj.apartments[0]}</option>`;
+        } else {
+            aptContext.classList.add('hidden');
+            aptSelect.innerHTML = '';
+        }
+    } else {
+        aptContext.classList.add('hidden');
+    }
+
     modal.classList.remove('hidden');
     setTimeout(() => modalContent.classList.remove('opacity-0', '-translate-y-4'), 10);
 
@@ -204,7 +232,13 @@ export async function sendMessageHandler(e) {
     if (!to || (!message.trim() && !selectedFile)) return false;
 
     try {
-        const apartment = window.app.state.userRole === 'owner' ? window.app.state.selectedApartment : null;
+        let apartment = null;
+        if (window.app.state.userRole === 'owner') {
+            apartment = window.app.state.selectedApartment;
+        } else if (window.app.state.userRole === 'admin') {
+            apartment = document.getElementById('chat-apartment-select').value || null;
+        }
+
         const sentMessage = await api.sendMessage(to, message.trim(), selectedFile, apartment);
         addMessageToChat(sentMessage.data);
         messageInput.value = ''; // Limpa o campo de input
@@ -271,7 +305,12 @@ async function startRecording() {
                 // Envia o áudio
                 const to = document.getElementById('chat-partner-username').value;
                 try {
-                    const apartment = window.app.state.userRole === 'owner' ? window.app.state.selectedApartment : null;
+                    let apartment = null;
+                    if (window.app.state.userRole === 'owner') {
+                        apartment = window.app.state.selectedApartment;
+                    } else if (window.app.state.userRole === 'admin') {
+                        apartment = document.getElementById('chat-apartment-select').value || null;
+                    }
                     const sentMessage = await api.sendMessage(to, '', fileData, apartment);
                     addMessageToChat(sentMessage.data);
                 } catch (error) {
@@ -366,7 +405,12 @@ export async function handleFileSelection(event) {
 
             try {
                 fileNameDisplay.textContent = `Enviando: ${file.name}...`;
-                const apartment = window.app.state.userRole === 'owner' ? window.app.state.selectedApartment : null;
+                let apartment = null;
+                if (window.app.state.userRole === 'owner') {
+                    apartment = window.app.state.selectedApartment;
+                } else if (window.app.state.userRole === 'admin') {
+                    apartment = document.getElementById('chat-apartment-select').value || null;
+                }
                 const sentMessage = await api.sendMessage(to, '', fileData, apartment);
                 addMessageToChat(sentMessage.data);
                 fileNameDisplay.textContent = ''; // Limpa o nome do arquivo após o envio

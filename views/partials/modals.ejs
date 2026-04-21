@@ -457,7 +457,14 @@
 <div id="chat-modal" class="fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center hidden z-50 p-4">
     <div class="card w-full max-w-lg h-[70vh] flex flex-col transform transition-all opacity-0 -translate-y-4">
         <div class="p-4 border-b flex justify-between items-center flex-shrink-0 gap-4">
-            <h3 id="chat-modal-title" class="text-lg font-bold">Conversa</h3>
+            <div class="flex flex-col">
+                <h3 id="chat-modal-title" class="text-lg font-bold leading-tight">Conversa</h3>
+                <div id="admin-chat-apartment-context" class="hidden mt-1">
+                    <select id="chat-apartment-select" class="text-[10px] uppercase font-bold tracking-widest bg-blue-500/10 text-blue-500 border border-blue-500/30 rounded px-2 py-0.5 focus:outline-none">
+                        <!-- Opções injetadas via JS -->
+                    </select>
+                </div>
+            </div>
             <div class="flex items-center">
                 <button id="clear-current-chat-btn" class="btn btn-ghost p-2 rounded-full w-9 h-9 text-red-500 hidden" title="Limpar histórico desta conversa"><i data-lucide="trash-2"></i></button>
                 <button id="close-chat-modal-btn" class="btn btn-ghost p-2 rounded-full w-9 h-9"><i data-lucide="x"></i></button>
@@ -488,7 +495,10 @@
     <div class="card w-full max-w-md h-auto max-h-[70vh] flex flex-col transform transition-all opacity-0 -translate-y-4">
         <div class="p-3 border-b flex justify-between items-center flex-shrink-0">
             <h3 class="text-lg font-bold">Conversas</h3>
-            <button id="close-chat-list-modal-btn" class="btn btn-ghost p-2 rounded-full w-9 h-9"><i data-lucide="x"></i></button>
+            <div class="flex items-center gap-2">
+                <button id="admin-new-chat-btn" class="btn btn-secondary p-1.5 h-8 w-8 rounded-full" title="Nova Conversa"><i data-lucide="plus"></i></button>
+                <button id="close-chat-list-modal-btn" class="btn btn-ghost p-2 rounded-full w-9 h-9"><i data-lucide="x"></i></button>
+            </div>
         </div>
         <div class="p-2 border-b">
             <div class="relative">
