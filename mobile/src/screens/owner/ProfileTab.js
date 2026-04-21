@@ -23,6 +23,7 @@ export default function ProfileTab({ onLogout, navigate }) {
   const { theme: activeTheme, appearance, palette, setAppearance, setPalette } = React.useContext(ThemeContext);
   const isDark = appearance === 'dark';
   const [username, setUsername] = useState('');
+  const [phone, setPhone] = useState('');
   const [apartment, setApartment] = useState('');
   const [role, setRole] = useState('');
   const [showChangePwd, setShowChangePwd] = useState(false);
@@ -41,9 +42,11 @@ export default function ProfileTab({ onLogout, navigate }) {
       const u = await AsyncStorage.getItem('@user_username');
       const a = await AsyncStorage.getItem('@user_apartment');
       const r = await AsyncStorage.getItem('@user_role');
+      const p = await AsyncStorage.getItem('@user_phone');
       const img = await AsyncStorage.getItem('@profile_image');
       const rs = await AsyncStorage.getItem('@user_apartments');
       if (u) setUsername(u);
+      if (p) setPhone(p);
       if (a) setApartment(a);
       if (r) setRole(r);
       if (img) setProfileImage(img);
@@ -396,6 +399,21 @@ export default function ProfileTab({ onLogout, navigate }) {
                 <Text style={[styles.infoLabel, { color: activeTheme.colors.textSecondary }]}>Usuário</Text>
               </View>
               <Text style={[styles.infoValue, { color: activeTheme.colors.text }]}>{username}</Text>
+            </View>
+            <View style={[styles.divider, { backgroundColor: activeTheme.colors.border }]} />
+            <View style={styles.infoRow}>
+              <View style={styles.infoLabelPart}>
+                <View style={[styles.infoIconCircle, { backgroundColor: activeTheme.colors.glassSecondary }]}>
+                  <Image
+                    source={require('../../../assets/icons/whatsapp_active.png')}
+                    style={{ width: 14, height: 14 }}
+                    tintColor={activeTheme.colors.textSecondary}
+                    resizeMode="contain"
+                  />
+                </View>
+                <Text style={[styles.infoLabel, { color: activeTheme.colors.textSecondary }]}>Telefone</Text>
+              </View>
+              <Text style={[styles.infoValue, { color: activeTheme.colors.text }]}>{phone || 'Não informado'}</Text>
             </View>
             {apartment && (
               <>

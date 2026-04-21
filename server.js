@@ -128,7 +128,12 @@ app.post('/api/auth/login', async (req, res) => {
     const apartments = Array.isArray(user.apartments) ? user.apartments : (user.apartment ? [user.apartment.trim()] : []);
     const payload = { username: user.username, role: user.role, apartments: apartments };
     const accessToken = jwt.sign(payload, JWT_SECRET, { expiresIn: '30d' });
-    res.json({ accessToken, role: user.role, apartments: apartments });
+    res.json({ 
+        accessToken, 
+        role: user.role, 
+        apartments: apartments,
+        phone: user.phone || ''
+    });
 });
 
 // Rota para alterar a própria senha (protegida)

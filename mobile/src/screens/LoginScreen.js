@@ -127,6 +127,7 @@ export default function LoginScreen({ navigate }) {
       await AsyncStorage.setItem('@auth_token', accessToken);
       await AsyncStorage.setItem('@user_role', role);
       await AsyncStorage.setItem('@user_username', trimmedUser);
+      await AsyncStorage.setItem('@user_phone', response.data.phone || '');
       
       if (apartments && Array.isArray(apartments)) {
         await AsyncStorage.setItem('@user_apartments', JSON.stringify(apartments));
@@ -176,6 +177,7 @@ export default function LoginScreen({ navigate }) {
           await AsyncStorage.setItem('@auth_token', accessToken);
           await AsyncStorage.setItem('@user_role', role);
           await AsyncStorage.setItem('@user_username', username);
+          await AsyncStorage.setItem('@user_phone', response.data.phone || '');
           if (apartments && Array.isArray(apartments)) {
               await AsyncStorage.setItem('@user_apartments', JSON.stringify(apartments));
           }

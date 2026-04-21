@@ -631,9 +631,13 @@ document.addEventListener('DOMContentLoaded', () => {
                 if (shouldSendInstructions && phone) {
                     const cleanPhone = phone.replace(/\D/g, '');
                     const welcomeMessage = encodeURIComponent(`Olá ${userData.username}! Boas-vindas ao ecossistema Obsidian. Seu acesso como proprietário foi criado.\n\n🔗 Painel Web: https://storeyluxor.onrender.com\n👤 Usuário: ${userData.username}\n🔑 Senha: ${userData.password}\n\nVocê também pode baixar nosso aplicativo mobile para acompanhar suas reservas em tempo real.`);
-                    window.open(`https://wa.me/${cleanPhone}?text=${welcomeMessage}`, '_blank');
+                    
+                    // Abre em nova aba
+                    const waUrl = `https://wa.me/${cleanPhone}?text=${welcomeMessage}`;
+                    window.open(waUrl, '_blank');
                 }
             } catch (error) {
+                console.error('Erro ao criar usuário:', error);
                 modals.showAlert(`Não foi possível criar o usuário: ${error.message}`);
             }
         }
