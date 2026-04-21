@@ -438,7 +438,9 @@ export function setupEventListeners(app) {
         let scrollLeft;
 
         calendarScrollArea.addEventListener('mousedown', (e) => {
-            if (e.target !== calendarScrollArea && !e.target.classList.contains('calendar-day-cell-body')) return;
+            // Ignora se clicar numa reserva, num botão ou redimensionador
+            if (e.target.closest('.reservation-bar') || e.target.closest('.resize-handle') || e.target.closest('button')) return;
+            
             isDown = true;
             calendarScrollArea.classList.add('active-scroll');
             startX = e.pageX - calendarScrollArea.offsetLeft;
