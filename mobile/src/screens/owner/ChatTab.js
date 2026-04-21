@@ -135,12 +135,14 @@ export default function ChatTab({ username: usernameProp, onRead, selectedApartm
 
   const loadMessages = useCallback(async () => {
     try {
-      const res = await api.get(`/messages/${PARTNER}`);
+      // Se tiver apartamento selecionado, passa como query param
+      const url = selectedApartment ? `/messages/${PARTNER}?apartment=${selectedApartment}` : `/messages/${PARTNER}`;
+      const res = await api.get(url);
       setMessages(res.data || []);
-      api.post('/messages/read', { partner: PARTNER }).catch(() => {});
+      api.post('/messages/read', { partner: PARTNER, apartment: selectedApartment }).catch(() => {});
       if (onRead) onRead();
     } catch (e) { console.error(e); } finally { setLoading(false); }
-  }, [onRead]);
+  }, [onRead, selectedApartment]);
 
   useEffect(() => {
     loadMessages();
@@ -150,9 +152,12 @@ export default function ChatTab({ username: usernameProp, onRead, selectedApartm
       socketRef.current = socket;
       socket.on('new_message', (msg) => {
         if (msg.from === PARTNER || msg.to === PARTNER) {
+          // No mobile do proprietário, só adiciona se for do apartamento selecionado
+          if (selectedApartment && msg.apartment !== selectedApartment) return;
+
           setMessages(prev => [...prev, msg]);
           if (msg.from === PARTNER) {
-            api.post('/messages/read', { partner: PARTNER }).catch(() => {});
+            api.post('/messages/read', { partner: PARTNER, apartment: selectedApartment }).catch(() => {});
             if (onRead) onRead();
           }
         }

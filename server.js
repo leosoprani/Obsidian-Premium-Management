@@ -1030,9 +1030,16 @@ app.get('/api/messages/:partner', authenticateToken, async (req, res) => {
         const currentUser = req.user.username;
         const partner = req.params.partner;
 
-        const messages = await db.collection('messages').find({
+        const query = {
             $or: [{ from: currentUser, to: partner }, { from: partner, to: currentUser }]
-        }).sort({ timestamp: 1 }).toArray();
+        };
+
+        // Se um apartamento for especificado na query string, filtra as mensagens por ele
+        if (req.query.apartment) {
+            query.apartment = req.query.apartment;
+        }
+
+        const messages = await db.collection('messages').find(query).sort({ timestamp: 1 }).toArray();
 
         // Normaliza IDs
         const normalizedMessages = messages.map(m => ({ ...m, _id: m._id.toString() }));
@@ -1047,14 +1054,19 @@ app.get('/api/messages/:partner', authenticateToken, async (req, res) => {
 app.post('/api/messages/read', authenticateToken, async (req, res) => {
     try {
         const currentUser = req.user.username;
-        const { partner } = req.body;
+        const { partner, apartment } = req.body;
 
         if (!partner) {
             return res.status(400).json({ message: 'Parceiro de conversa não especificado.' });
         }
 
+        const query = { from: partner, to: currentUser, read: false };
+        if (apartment) {
+            query.apartment = apartment;
+        }
+
         await db.collection('messages').updateMany(
-            { from: partner, to: currentUser, read: false },
+            query,
             { $set: { read: true } }
         );
 

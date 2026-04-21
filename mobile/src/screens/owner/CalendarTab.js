@@ -77,7 +77,12 @@ export default function CalendarTab({ selectedApartment }) {
         data = data.filter(r => String(r.apartment) === String(selectedApartment));
       }
       setReservations(data);
-      setExternalEvents(resExternal.data || []);
+      
+      let exts = resExternal.data || [];
+      if (selectedApartment) {
+        exts = exts.filter(e => String(e.apartment) === String(selectedApartment));
+      }
+      setExternalEvents(exts);
     } catch (e) {
       console.error('Erro ao carregar calendário:', e);
     } finally {

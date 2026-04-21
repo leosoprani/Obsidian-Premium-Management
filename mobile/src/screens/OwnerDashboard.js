@@ -81,7 +81,7 @@ function ReservationCard({ item, activeTheme }) {
   );
 }
 
-export default function OwnerDashboard({ navigate }) {
+export default function OwnerDashboard({ selectedApartment, navigate }) {
   const { theme: activeTheme, isDark } = React.useContext(ThemeContext);
   const { handleScroll } = useTabBarScroll();
 
@@ -99,16 +99,9 @@ export default function OwnerDashboard({ navigate }) {
 
   const loadData = useCallback(async () => {
     try {
-      const aptsJson = await AsyncStorage.getItem('@user_apartments');
       const savedUser = await AsyncStorage.getItem('@user_username');
 
       if (savedUser) setUsername(savedUser);
-      const apts = aptsJson ? JSON.parse(aptsJson) : [];
-      setAllApartments(apts);
-
-      if (!apartment && apts.length > 0) {
-        setApartment(apts[0]);
-      }
 
       const res = await api.get('/reservations');
       setReservations(res.data || []);
@@ -118,7 +111,7 @@ export default function OwnerDashboard({ navigate }) {
       setLoading(false);
       setRefreshing(false);
     }
-  }, [apartment]);
+  }, []);
 
   useEffect(() => { loadData(); }, [loadData]);
 
@@ -128,7 +121,7 @@ export default function OwnerDashboard({ navigate }) {
     const currentMonth = now.getMonth();
     const currentYear = now.getFullYear();
 
-    const filtered = apartment ? reservations.filter(r => r.apartment === apartment) : reservations;
+    const filtered = selectedApartment ? reservations.filter(r => String(r.apartment) === String(selectedApartment)) : reservations;
     
     // Monthly Revenue (Confirmed/Check-in/Check-out in current month)
     const revenue = filtered.reduce((acc, res) => {
@@ -167,7 +160,7 @@ export default function OwnerDashboard({ navigate }) {
       canceled: filtered.filter(r => r.status === 'canceled').length,
       active: filtered.filter(r => r.status === 'checked-in').length
     };
-  }, [reservations, apartment]);
+  }, [reservations, selectedApartment]);
 
   // Statistics for the last 6 months (Simulated for visual)
   const chartData = useMemo(() => {
@@ -192,13 +185,13 @@ export default function OwnerDashboard({ navigate }) {
   }, [reservations]);
 
   const filteredList = useMemo(() => {
-    let list = apartment ? reservations.filter(r => r.apartment === apartment) : reservations;
+    let list = selectedApartment ? reservations.filter(r => String(r.apartment) === String(selectedApartment)) : reservations;
     if (selectedStatus !== 'all') {
         list = list.filter(r => r.status === selectedStatus);
     }
     // Return chronological
     return list.sort((a, b) => new Date(b.startDate) - new Date(a.startDate));
-  }, [reservations, apartment, selectedStatus]);
+  }, [reservations, selectedApartment, selectedStatus]);
 
   const handleGenerateReport = () => {
     const reportText = filteredList.map(r => 
@@ -267,32 +260,7 @@ export default function OwnerDashboard({ navigate }) {
       >
         <View style={styles.topSpacer} />
 
-        {/* APARTMENT SWITCHER */}
-        {allApartments.length > 1 && (
-            <View style={styles.switcherContainer}>
-                <Text style={[styles.sectionCaption, { color: activeTheme.colors.textTertiary }]}>SUAS UNIDADES</Text>
-                <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.switcherList}>
-                    {allApartments.map(item => (
-                        <TouchableOpacity 
-                            key={item}
-                            activeOpacity={0.8}
-                            onPress={() => setApartment(item)}
-                            style={[
-                                styles.aptChip,
-                                { backgroundColor: activeTheme.colors.glass, borderColor: activeTheme.colors.glassBorder },
-                                apartment === item && [styles.aptChipActive, { backgroundColor: activeTheme.colors.primary, borderColor: activeTheme.colors.primary }]
-                            ]}
-                        >
-                            <Text style={[
-                                styles.aptChipText,
-                                { color: activeTheme.colors.textSecondary },
-                                apartment === item && styles.aptChipTextActive
-                            ]}>Apto {item}</Text>
-                        </TouchableOpacity>
-                    ))}
-                </ScrollView>
-            </View>
-        )}
+        {/* Removed redundant apartment switcher - now handled by OwnerTabNavigator header */}
 
         {/* FINANCIAL METRICS GRID */}
         <View style={styles.metricsGrid}>
@@ -431,7 +399,7 @@ export default function OwnerDashboard({ navigate }) {
           visible={showRequestModal}
           onClose={() => setShowRequestModal(false)}
           onSuccess={loadData}
-          apartment={apartment}
+          apartment={selectedApartment}
       />
       <AddGuestModal 
           visible={showAddGuestModal}

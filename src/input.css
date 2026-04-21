@@ -614,6 +614,16 @@
         border-bottom-left-radius: 0.125rem;
     }
 
+    .chat-bubble-apt {
+        display: block;
+        font-size: 0.65rem;
+        font-weight: 800;
+        text-transform: uppercase;
+        color: var(--brand-blue);
+        margin-bottom: 0.25rem;
+        letter-spacing: 0.05em;
+    }
+
     .chat-timestamp {
         font-size: 0.75rem;
         opacity: 0.7;

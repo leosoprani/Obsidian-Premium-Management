@@ -4525,3 +4525,12 @@ html.dark .dark\:text-on-surface-variant:is(.dark *) {
     grid-template-columns: repeat(5, minmax(0, 1fr));
   }
 }
+.chat-bubble-apt {
+    display: block;
+    font-size: 0.65rem;
+    font-weight: 800;
+    text-transform: uppercase;
+    color: #3e65ff;
+    margin-bottom: 0.25rem;
+    letter-spacing: 0.05em;
+}
