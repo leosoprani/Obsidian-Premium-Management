@@ -693,6 +693,8 @@ export function openUserModal(userId = null, defaultRole = 'staff') {
     const passwordInput = document.getElementById('user-password');
     const usernameInput = document.getElementById('user-username');
     const roleSelect = document.getElementById('user-role-select');
+    const apartmentField = document.getElementById('user-apartment-field');
+    const apartmentInput = document.getElementById('user-apartments-input');
     const ownerOptions = document.getElementById('user-owner-options');
     const phoneInput = document.getElementById('user-phone');
     const sendInstructions = document.getElementById('user-send-instructions');
@@ -722,13 +724,16 @@ export function openUserModal(userId = null, defaultRole = 'staff') {
             passwordInput.placeholder = 'Deixe em branco para não alterar';
             passwordInput.removeAttribute('required');
 
-            // Popula os apartamentos como string separada por vírgula
             if (user.apartments && Array.isArray(user.apartments)) {
                 apartmentInput.value = user.apartments.join(', ');
             } else if (user.apartment) {
                 apartmentInput.value = user.apartment;
             } else {
                 apartmentInput.value = '';
+            }
+
+            if (phoneInput) {
+                phoneInput.value = user.phone || '';
             }
         }
     } else {

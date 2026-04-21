@@ -599,7 +599,11 @@ document.addEventListener('DOMContentLoaded', () => {
 
         if (userId) {
             // Edição
-            const updateData = { role: userData.role, apartments: userData.apartments };
+            const updateData = { 
+                role: userData.role, 
+                apartments: userData.apartments,
+                phone: userData.phone 
+            };
             if (userData.password) {
                 updateData.password = userData.password;
             }
@@ -609,6 +613,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 if (userIndex > -1) {
                     window.app.state.users[userIndex].apartments = userData.apartments;
                     window.app.state.users[userIndex].role = userData.role;
+                    window.app.state.users[userIndex].phone = userData.phone;
                     // Limpa campo singular antigo se houver
                     delete window.app.state.users[userIndex].apartment;
                 }
