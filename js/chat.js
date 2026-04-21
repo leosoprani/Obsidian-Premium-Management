@@ -105,6 +105,22 @@ export function closeChatModal() {
 export function addMessageToChat(message) {
     const container = document.getElementById('chat-messages-container');
     const currentUser = window.app.state.currentUser.username;
+    const userRole = window.app.state.userRole;
+
+    // Verifica se a mensagem pertence ao contexto atual de apartamento
+    let selectedApt = null;
+    if (userRole === 'owner') {
+        selectedApt = window.app.state.selectedApartment;
+    } else if (userRole === 'admin') {
+        const aptSelect = document.getElementById('chat-apartment-select');
+        selectedApt = aptSelect ? aptSelect.value : null;
+    }
+
+    if (selectedApt && message.apartment && message.apartment !== selectedApt) {
+        // Se a mensagem for de outro apartamento, não adicionamos à bolha atual
+        return;
+    }
+
     const isSent = message.from === currentUser;
 
     let fileHtml = '';
@@ -162,13 +178,29 @@ export function addMessageToChat(message) {
 export function renderChatMessages(messages) {
     const container = document.getElementById('chat-messages-container');
     const currentUser = window.app.state.currentUser.username;
+    const userRole = window.app.state.userRole;
 
-    if (!messages || messages.length === 0) {
+    // Determina qual apartamento filtrar
+    let selectedApt = null;
+    if (userRole === 'owner') {
+        selectedApt = window.app.state.selectedApartment;
+    } else if (userRole === 'admin') {
+        const aptSelect = document.getElementById('chat-apartment-select');
+        selectedApt = aptSelect ? aptSelect.value : null;
+    }
+
+    // Filtra as mensagens pelo apartamento (se houver um selecionado)
+    let filteredMessages = messages;
+    if (selectedApt) {
+        filteredMessages = messages.filter(msg => !msg.apartment || msg.apartment === selectedApt);
+    }
+
+    if (!filteredMessages || filteredMessages.length === 0) {
         container.innerHTML = `<p class="text-center text-outline">Inicie a conversa.</p>`;
         return;
     }
 
-    container.innerHTML = messages.map(msg => {
+    container.innerHTML = filteredMessages.map(msg => {
         const isSent = msg.from === currentUser;
         let fileHtml = '';
         if (msg.file) {
