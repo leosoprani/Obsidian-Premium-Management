@@ -45,6 +45,7 @@ window.app = {
         nextRefreshTimeout: null,
         userRole: null,
         selectedApartment: null, // O apartamento atualmente selecionado pelo proprietário
+        onlineUsers: [], // Lista de usernames online
     },
     dom: {}, // Será preenchido no DOMContentLoaded
     modals: {},
@@ -585,12 +586,15 @@ document.addEventListener('DOMContentLoaded', () => {
         const role = form.elements['user-role-select'].value;
         const apartmentsString = form.elements['user-apartments-input'] ? form.elements['user-apartments-input'].value : '';
         const apartments = role === 'owner' ? apartmentsString.split(',').map(s => s.trim()).filter(s => s !== '') : [];
+        const phone = form.elements['user-phone'] ? form.elements['user-phone'].value : '';
+        const shouldSendInstructions = form.elements['user-send-instructions'] ? form.elements['user-send-instructions'].checked : false;
 
         const userData = {
             username: form.elements['user-username'].value,
             password: form.elements['user-password'].value,
             role: role,
-            apartments: apartments
+            apartments: apartments,
+            phone: phone
         };
 
         if (userId) {
@@ -622,6 +626,13 @@ document.addEventListener('DOMContentLoaded', () => {
                 modals.closeUserModal();
                 window.app.renderCurrentView();
                 modals.showAlert('Usuário criado com sucesso!');
+
+                // Envia instruções se solicitado
+                if (shouldSendInstructions && phone) {
+                    const cleanPhone = phone.replace(/\D/g, '');
+                    const welcomeMessage = encodeURIComponent(`Olá ${userData.username}! Boas-vindas ao ecossistema Obsidian. Seu acesso como proprietário foi criado.\n\n🔗 Painel Web: https://storeyluxor.onrender.com\n👤 Usuário: ${userData.username}\n🔑 Senha: ${userData.password}\n\nVocê também pode baixar nosso aplicativo mobile para acompanhar suas reservas em tempo real.`);
+                    window.open(`https://wa.me/${cleanPhone}?text=${welcomeMessage}`, '_blank');
+                }
             } catch (error) {
                 modals.showAlert(`Não foi possível criar o usuário: ${error.message}`);
             }
@@ -1049,6 +1060,14 @@ document.addEventListener('DOMContentLoaded', () => {
         window.app.updateNavigationButtons();
         scheduleNextAutoRefresh();
 
+        // Busca usuários online inicialmente
+        if (!isSilentUpdate && window.app.state.userRole === 'admin') {
+            api.getOnlineUsers().then(onlineList => {
+                window.app.state.onlineUsers = onlineList;
+                ui.renderChatList(window.app.state.users);
+            }).catch(err => console.error('Erro ao buscar usuários online:', err));
+        }
+
         // Inicia ciclo de auto-backup no Dexie após inicialização bem-sucedida
         if (!isSilentUpdate) {
             sync.startAutoBackupCycle(() => window.app.state);
@@ -1268,8 +1287,26 @@ document.addEventListener('DOMContentLoaded', () => {
 
                 // Conecta ao WebSocket no domínio atual
                 const socket = io();
+                
+                // Registra o usuário atual no servidor para rastreamento de status online
+                socket.emit('register', window.app.state.currentUser?.username);
+
+                socket.on('user_status_changed', ({ username, status }) => {
+                    console.log(`Status de ${username} mudou para: ${status}`);
+                    // Atualiza a lista de usuários online no estado
+                    if (status === 'online') {
+                        if (!window.app.state.onlineUsers.includes(username)) {
+                            window.app.state.onlineUsers.push(username);
+                        }
+                    } else {
+                        window.app.state.onlineUsers = window.app.state.onlineUsers.filter(u => u !== username);
+                    }
+                    // Re-renderiza a lista de chat se estiver aberta
+                    ui.renderChatList(window.app.state.users);
+                });
+
                 socket.on('data_updated', (updateData) => {
-                    const currentUser = parseJwt(localStorage.getItem('authToken'))?.username;
+                    const currentUser = window.app.state.currentUser?.username;
 
                     // Só mostra a notificação e atualiza se a ação foi de OUTRO usuário
                     if (currentUser && updateData.user !== currentUser) {

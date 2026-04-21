@@ -260,7 +260,7 @@ app.get('/api/users', authenticateToken, authorize('admin'), async (req, res) =>
 // Rota para criar um novo usuário
 app.post('/api/users', authenticateToken, authorize('admin'), async (req, res) => {
     try {
-        const { username, password, role, apartments } = req.body;
+        const { username, password, role, apartments, phone } = req.body;
         if (!username || !password || !role) {
             return res.status(400).json({ message: 'Nome de usuário, senha e função são obrigatórios.' });
         }
@@ -279,7 +279,13 @@ app.post('/api/users', authenticateToken, authorize('admin'), async (req, res) =
         } else if (req.body.apartment) {
             normalizedApartments = [req.body.apartment.trim()];
         }
-        const newUserDoc = { username, password: hashedPassword, role, apartments: normalizedApartments };
+        const newUserDoc = { 
+            username, 
+            password: hashedPassword, 
+            role, 
+            apartments: normalizedApartments,
+            phone: phone || ''
+        };
         const result = await db.collection('users').insertOne(newUserDoc);
 
         // Emite WebSocket AFTER DB update
@@ -331,21 +337,18 @@ app.put('/api/users/:id', authenticateToken, authorize('admin'), async (req, res
         } else if (req.body.apartment) {
             normalizedApartments = [req.body.apartment.trim()];
         }
-
-        const updateDoc = { $set: { role, apartments: role === 'owner' ? normalizedApartments : [] } };
-        if (role !== 'owner') {
-            updateDoc.$unset = { apartment: "", apartments: "" }; // Clean up both fields
-        } else {
-            updateDoc.$unset = { apartment: "" }; // Migration: remove old singular field
+        const updateData = { 
+            role: req.body.role, 
+            apartments: req.body.apartments,
+            phone: req.body.phone || '' 
+        };
+        if (req.body.password) {
+            updateData.password = await bcrypt.hash(req.body.password, 10);
         }
-
-        if (password) {
-            updateDoc.$set.password = await bcrypt.hash(password, 10);
-        }
-
-        await db.collection('users').updateOne({ _id: new ObjectId(id) }, updateDoc);
-
-        // Emite WebSocket AFTER DB update
+        await db.collection('users').updateOne(
+            { _id: new ObjectId(id) },
+            { $set: updateData }
+        );// Emite WebSocket AFTER DB update
         req.app.get('io').emit('data_updated', { action: 'update_user', user: req.user.username });
 
         res.status(200).json({ message: 'Usuário atualizado com sucesso' });
@@ -1221,8 +1224,40 @@ MongoClient.connect(mongoUrl, { serverSelectionTimeoutMS: 5000 })
         });
 
         // Lógica do Socket.io
+        const onlineUsers = new Map(); // username -> Set(socketIds)
+
         io.on('connection', (socket) => {
-            console.log('Um usuário se conectou via WebSocket');
+            console.log('Novo socket conectado:', socket.id);
+
+            socket.on('register', (username) => {
+                if (!username) return;
+                
+                if (!onlineUsers.has(username)) {
+                    onlineUsers.set(username, new Set());
+                }
+                onlineUsers.get(username).add(socket.id);
+                socket.username = username;
+                
+                console.log(`Usuário "${username}" registrado no socket ${socket.id}`);
+                io.emit('user_status_changed', { username, status: 'online' });
+            });
+
+            socket.on('disconnect', () => {
+                if (socket.username && onlineUsers.has(socket.username)) {
+                    const sockets = onlineUsers.get(socket.username);
+                    sockets.delete(socket.id);
+                    if (sockets.size === 0) {
+                        onlineUsers.delete(socket.username);
+                        console.log(`Usuário "${socket.username}" ficou offline.`);
+                        io.emit('user_status_changed', { username: socket.username, status: 'offline' });
+                    }
+                }
+            });
+        });
+
+        // Rota para listar usuários online
+        app.get('/api/users/online', authenticateToken, (req, res) => {
+            res.json(Array.from(onlineUsers.keys()));
         });
     })
     .catch(err => {

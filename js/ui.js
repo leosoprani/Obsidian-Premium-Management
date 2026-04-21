@@ -2597,6 +2597,7 @@ export function renderChatList(users, searchTerm = '') {
         const unreadInfo = window.app.state.unreadMessages.find(u => u.from === owner.username);
         const hasUnread = unreadInfo && unreadInfo.count > 0;
         const initial = owner.username.charAt(0).toUpperCase();
+        const isOnline = window.app.state.onlineUsers.includes(owner.username);
 
         return `
             <div 
@@ -2604,8 +2605,9 @@ export function renderChatList(users, searchTerm = '') {
                 onclick="window.app.modals.closeChatListModal(); window.app.chat.openChatModal('${owner.username}')"
             >
                 <div class="flex items-center gap-3">
-                    <div class="w-10 h-10 rounded-full bg-blue-100 dark:bg-blue-900/50 text-blue-600 dark:text-blue-400 flex items-center justify-center font-bold text-lg">
+                    <div class="relative w-10 h-10 rounded-full bg-blue-100 dark:bg-blue-900/50 text-blue-600 dark:text-blue-400 flex items-center justify-center font-bold text-lg">
                         ${initial}
+                        ${isOnline ? '<div class="absolute bottom-0 right-0 w-3 h-3 bg-green-500 border-2 border-white dark:border-gray-800 rounded-full shadow-sm"></div>' : ''}
                     </div>
                     <div>
                         <p class="font-semibold">${owner.username}</p>
@@ -2645,6 +2647,7 @@ export async function showOwnerSelector() {
         container.innerHTML = owners.map(owner => {
             const initial = owner.username.charAt(0).toUpperCase();
             const apartments = owner.apartments ? owner.apartments.join(', ') : (owner.apartment || 'N/A');
+            const isOnline = window.app.state.onlineUsers.includes(owner.username);
 
             return `
                 <div 
@@ -2652,8 +2655,9 @@ export async function showOwnerSelector() {
                     onclick="window.app.modals.closeChatListModal(); window.app.chat.openChatModal('${owner.username}')"
                 >
                     <div class="flex items-center gap-3">
-                        <div class="w-10 h-10 rounded-full bg-primary/10 text-primary flex items-center justify-center font-bold text-lg">
+                        <div class="relative w-10 h-10 rounded-full bg-primary/10 text-primary flex items-center justify-center font-bold text-lg">
                             ${initial}
+                            ${isOnline ? '<div class="absolute bottom-0 right-0 w-3 h-3 bg-green-500 border-2 border-white dark:border-gray-800 rounded-full shadow-sm"></div>' : ''}
                         </div>
                         <div>
                             <p class="font-semibold">${owner.username}</p>

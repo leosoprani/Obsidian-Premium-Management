@@ -447,6 +447,15 @@ export async function getUnreadSummary() {
 }
 
 /**
+ * Busca a lista de usuários online do servidor.
+ * @returns {Promise<Array>} - Array de nomes de usuários.
+ */
+export async function getOnlineUsers() {
+    const response = await fetch(`${API_BASE_URL}/users/online`, { headers: getAuthHeaders() });
+    return handleResponse(response);
+}
+
+/**
  * Apaga todo o histórico de chat com um parceiro específico.
  * @param {string} partnerUsername - O nome de usuário do parceiro.
  * @returns {Promise<object>}

@@ -693,12 +693,14 @@ export function openUserModal(userId = null, defaultRole = 'staff') {
     const passwordInput = document.getElementById('user-password');
     const usernameInput = document.getElementById('user-username');
     const roleSelect = document.getElementById('user-role-select');
-    const apartmentField = document.getElementById('user-apartment-field');
-    const apartmentInput = document.getElementById('user-apartments-input');
+    const ownerOptions = document.getElementById('user-owner-options');
+    const phoneInput = document.getElementById('user-phone');
+    const sendInstructions = document.getElementById('user-send-instructions');
 
     const toggleApartmentField = () => {
         const isOwner = roleSelect.value === 'owner';
         apartmentField.classList.toggle('hidden', !isOwner);
+        ownerOptions.classList.toggle('hidden', !isOwner);
         apartmentInput.required = isOwner;
     };
 
@@ -736,7 +738,11 @@ export function openUserModal(userId = null, defaultRole = 'staff') {
         passwordInput.setAttribute('required', 'required');
         roleSelect.value = defaultRole;
         apartmentInput.value = '';
+        phoneInput.value = '';
+        sendInstructions.checked = false;
     }
+
+    toggleApartmentField();
 
     // Garante que o campo de apartamento seja exibido corretamente ao abrir com base na função padrão ou salva
     toggleApartmentField();
