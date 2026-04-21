@@ -1052,6 +1052,7 @@ document.addEventListener('DOMContentLoaded', () => {
         // Inicia ciclo de auto-backup no Dexie após inicialização bem-sucedida
         if (!isSilentUpdate) {
             sync.startAutoBackupCycle(() => window.app.state);
+            ui.updateWelcomeMessage();
         }
     }
 

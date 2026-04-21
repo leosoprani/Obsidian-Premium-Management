@@ -55,7 +55,10 @@ export function startClock() {
     }
 
     updateClock();
-    setInterval(updateClock, 1000);
+    setInterval(() => {
+        updateClock();
+        updateWelcomeMessage();
+    }, 1000);
 }
 
 /**
@@ -914,6 +917,37 @@ export function renderFinancialView(reservations, guests, expenses, currentDate)
     reservationsContainer.innerHTML = reservationsTableHtml;
     expensesContainer.innerHTML = expensesTableHtml;
     window.lucide.createIcons();
+}
+
+/**
+ * Atualiza a mensagem de boas-vindas e a hora atual.
+ */
+export function updateWelcomeMessage() {
+    const welcomeEl = document.getElementById('admin-welcome-message');
+    const timeEl = document.getElementById('admin-current-time');
+    const ownerWelcomeEl = document.getElementById('owner-welcome-message');
+    
+    if (!welcomeEl && !ownerWelcomeEl) return;
+
+    const now = new Date();
+    const hours = now.getHours();
+    let greeting = '';
+
+    if (hours >= 5 && hours < 12) greeting = 'Bom dia';
+    else if (hours >= 12 && hours < 18) greeting = 'Boa tarde';
+    else greeting = 'Boa noite';
+
+    const username = window.app.state.currentUser?.username || 'Usuário';
+    const message = `${greeting}, ${username}! 👋`;
+
+    if (welcomeEl) welcomeEl.textContent = message;
+    if (ownerWelcomeEl) ownerWelcomeEl.textContent = message;
+
+    if (timeEl) {
+        const timeString = now.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
+        const dateString = now.toLocaleDateString('pt-BR', { weekday: 'long', day: '2-digit', month: 'long' });
+        timeEl.textContent = `${dateString.charAt(0).toUpperCase() + dateString.slice(1)} • ${timeString}`;
+    }
 }
 
 /**
@@ -2708,6 +2742,7 @@ export function attachUIFunctionsToWindow() {
     window.app.ui.updateChatUnreadIndicator = updateChatUnreadIndicator;
     window.app.ui.handleIncomingUnreadMessage = handleIncomingUnreadMessage;
     window.app.ui.showOwnerSelector = showOwnerSelector;
+    window.app.ui.updateWelcomeMessage = updateWelcomeMessage;
 }
 
 /**
