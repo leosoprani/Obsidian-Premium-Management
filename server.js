@@ -105,6 +105,63 @@ const logActivity = (action) => (req, res, next) => {
     next();
 };
 
+// ==========================================
+// PÚBLICAS: PÁGINAS E PRÉ-CHECKIN
+// ==========================================
+
+app.get('/pre-checkin/:id', async (req, res) => {
+    try {
+        const id = req.params.id;
+        let query;
+        try {
+            query = { $or: [{ _id: new ObjectId(id) }, { id: id }] };
+        } catch(e) {
+            query = { id: id };
+        }
+
+        const reservation = await db.collection('reservations').findOne(query);
+        if (!reservation) {
+            return res.status(404).send('Reserva não encontrada.');
+        }
+        res.render('precheckin', { reservation });
+    } catch (e) {
+        res.status(500).send('Erro ao carregar pré-checkin.');
+    }
+});
+
+app.post('/api/pre-checkin/:id', async (req, res) => {
+    try {
+         const id = req.params.id;
+         const data = req.body;
+         
+         let query;
+         try {
+             query = { $or: [{ _id: new ObjectId(id) }, { id: id }] };
+         } catch(e) {
+             query = { id: id };
+         }
+
+         const updateData = {
+             preCheckinCompleted: true,
+             updatedAt: new Date()
+         };
+         
+         if (data.doc) updateData.guestDoc = data.doc;
+         if (data.vehiclePlate) updateData.vehiclePlate = data.vehiclePlate;
+         if (data.vehicleModel) updateData.vehicleModel = data.vehicleModel;
+         if (data.vehicleColor) updateData.vehicleColor = data.vehicleColor;
+         if (data.facePhoto) updateData.guestFacePhoto = data.facePhoto;
+
+         await db.collection('reservations').updateOne(query, { $set: updateData });
+         
+         app.get('io').emit('reservation-updated');
+         res.json({ success: true });
+    } catch (e) {
+         console.error('Erro no pré-checkin:', e);
+         res.status(500).json({ error: 'Erro ao processar pré-checkin.' });
+    }
+});
+
 // Rota raiz - renderiza o template EJS principal
 app.get('/', (req, res) => {
     res.render('index');
@@ -1164,6 +1221,106 @@ app.delete('/api/messages/history/:partner', authenticateToken, async (req, res)
         res.status(200).json({ message: 'Histórico de conversa apagado com sucesso.' });
     } catch (error) {
         res.status(500).json({ message: 'Erro ao apagar histórico de conversa', error: error.message });
+    }
+});
+
+// --- ROTAS DE INTEGRAÇÃO CONTROL ID (EXPERIMENTAL) ---
+
+// Obter configurações do Control iD
+app.get('/api/controlid/settings', authenticateToken, async (req, res) => {
+    try {
+        const settings = await db.collection('settings').findOne({ type: 'controlid' });
+        res.json(settings || { 
+            type: 'controlid', 
+            ip: '', 
+            port: '4445', 
+            protocol: 'https', 
+            user: 'admin', 
+            autoSync: false,
+            status: 'disconnected'
+        });
+    } catch (error) {
+        res.status(500).json({ message: 'Erro ao buscar configurações' });
+    }
+});
+
+// Salvar configurações do Control iD
+app.post('/api/controlid/settings', authenticateToken, authorize('admin'), async (req, res) => {
+    try {
+        const settings = req.body;
+        await db.collection('settings').updateOne(
+            { type: 'controlid' },
+            { $set: { ...settings, updatedAt: new Date() } },
+            { upsert: true }
+        );
+        res.json({ message: 'Configurações salvas com sucesso' });
+    } catch (error) {
+        res.status(500).json({ message: 'Erro ao salvar configurações' });
+    }
+});
+
+// Testar conexão com Control iD (Mockado por enquanto)
+app.post('/api/controlid/test', authenticateToken, async (req, res) => {
+    const { ip, port, protocol } = req.body;
+    // Simula um teste de conexão
+    setTimeout(() => {
+        if (ip === 'localhost' || ip.startsWith('192.')) {
+            res.json({ success: true, message: 'Conexão estabelecida com sucesso (Simulado)' });
+        } else {
+            res.json({ success: true, message: 'Dispositivo em nuvem detectado (Simulado)' });
+        }
+    }, 1000);
+});
+
+// Gerar QR Code para uma reserva
+app.post('/api/controlid/generate-qrcode', authenticateToken, async (req, res) => {
+    try {
+        const { reservationId } = req.body;
+        const reservation = await db.collection('reservations').findOne({ id: reservationId });
+        
+        if (!reservation) {
+            return res.status(404).json({ message: 'Reserva não encontrada' });
+        }
+
+        // Simulação de geração de QR Code
+        // Na prática, aqui faríamos as chamadas para a API do Control iD:
+        // 1. /login
+        // 2. /create_objects (users)
+        // 3. /create_objects (cards)
+
+        const qrCodeValue = Math.floor(100000000 + Math.random() * 900000000).toString();
+        
+        await db.collection('reservations').updateOne(
+            { id: reservationId },
+            { $set: { 
+                controlid_qrcode: qrCodeValue,
+                controlid_synced: true,
+                controlid_sync_date: new Date()
+            }}
+        );
+
+        res.json({ 
+            success: true, 
+            message: 'QR Code gerado com sucesso (Simulado)', 
+            qrCode: qrCodeValue 
+        });
+    } catch (error) {
+        res.status(500).json({ message: 'Erro ao gerar QR Code', error: error.message });
+    }
+});
+
+// Rota para abertura remota da porta
+app.post('/api/controlid/open-door', authenticateToken, authorize(['admin', 'owner']), async (req, res) => {
+    try {
+        console.log(`[Control iD] Comando de abertura remota recebido de: ${req.user.username}`);
+        
+        // Simulação de delay de rede
+        await new Promise(resolve => setTimeout(resolve, 800));
+
+        res.json({ success: true, message: 'Comando de abertura enviado com sucesso!' });
+    } catch (error) {
+        console.error('[Control iD] Erro ao abrir porta:', error);
+        res.status(500).json({ success: false, message: 'Erro ao processar comando de abertura.' });
     }
 });
 

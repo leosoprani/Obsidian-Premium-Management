@@ -3,6 +3,7 @@ import * as modals from './modals.js';
 import * as chat from './chat.js';
 import * as api from './api.js';
 import * as sync from './sync.js';
+import * as controlid from './controlid.js';
 
 /**
  * Configura todos os event listeners da aplicação.
@@ -56,6 +57,31 @@ export function setupEventListeners(app) {
         ui.applyTheme(newTheme);
         app.renderCurrentView(); // Redesenha a view para aplicar cores dos gráficos
     });
+
+    const tvModeBtn = document.getElementById('tv-mode-btn');
+    if (tvModeBtn) {
+        tvModeBtn.addEventListener('click', () => {
+            document.body.classList.toggle('tv-mode');
+            const isTvMode = document.body.classList.contains('tv-mode');
+            
+            if (isTvMode) {
+                // Enter fullscreen if supported
+                if (document.documentElement.requestFullscreen) {
+                    document.documentElement.requestFullscreen().catch(() => {});
+                }
+                ui.showToast('TV Mode Ativado', 'O painel agora está no modo apresentação.', 'monitor', 'success');
+            } else {
+                // Exit fullscreen if supported
+                if (document.exitFullscreen && document.fullscreenElement) {
+                    document.exitFullscreen().catch(() => {});
+                }
+                ui.showToast('TV Mode Desativado', 'O painel retornou ao modo normal.', 'monitor', 'info');
+            }
+            
+            // Re-render to adapt charts to new width
+            setTimeout(() => app.renderCurrentView(), 300);
+        });
+    }
 
     // Listener para o botão de tema do portal do proprietário
     const ownerThemeToggleBtn = document.getElementById('owner-theme-toggle-btn');
@@ -476,8 +502,11 @@ export function setupEventListeners(app) {
             if (!isDown) return;
             e.preventDefault();
             const x = e.pageX - calendarScrollArea.offsetLeft;
-            const walk = (x - startX) * 2;
-            calendarScrollArea.scrollLeft = scrollLeft - walk;
+            const walk = (x - startX) * 1.5; // Ajuste de sensibilidade
+            if (Math.abs(x - startX) > 5) {
+                isDown = true;
+                calendarScrollArea.scrollLeft = scrollLeft - walk;
+            }
         });
 
         // Drag-to-select para criar reserva
@@ -517,13 +546,27 @@ export function setupEventListeners(app) {
                 const apartment = startCell.dataset.apartment;
                 const date1 = new Date(startCell.dataset.date + 'T00:00:00');
                 const date2 = new Date(endCell.dataset.date + 'T00:00:00');
-                const checkin = (date1 < date2 ? date1 : date2).toISOString().split('T')[0];
-                const checkout = (date1 > date2 ? date1 : date2).toISOString().split('T')[0];
+                
+                let checkinDate = date1 < date2 ? date1 : date2;
+                let checkoutDate = date1 > date2 ? date1 : date2;
+                
+                // Se for o mesmo dia, define o checkout para o dia seguinte (padrão 1 noite)
+                if (checkinDate.getTime() === checkoutDate.getTime()) {
+                    checkoutDate = new Date(checkinDate);
+                    checkoutDate.setDate(checkoutDate.getDate() + 1);
+                }
+
+                const checkin = checkinDate.toISOString().split('T')[0];
+                const checkout = checkoutDate.toISOString().split('T')[0];
+                
                 appModals.openReservationModal();
                 setTimeout(() => {
-                    document.getElementById('apartment-select').value = apartment;
-                    document.getElementById('checkin-date').value = checkin;
-                    document.getElementById('checkout-date').value = checkout;
+                    const aptSelect = document.getElementById('apartment-select');
+                    const checkinInput = document.getElementById('checkin-date');
+                    const checkoutInput = document.getElementById('checkout-date');
+                    if (aptSelect) aptSelect.value = apartment;
+                    if (checkinInput) checkinInput.value = checkin;
+                    if (checkoutInput) checkoutInput.value = checkout;
                 }, 100);
             }
             isDragging = false;
@@ -641,4 +684,39 @@ export function setupEventListeners(app) {
             }
         }
     });
+
+    // --- Eventos Control iD ---
+    const controlidConfigBtn = document.getElementById('controlid-config-btn');
+    if (controlidConfigBtn) {
+        controlidConfigBtn.addEventListener('click', controlid.openControlIdModal);
+    }
+    
+    document.getElementById('close-controlid-modal-btn').addEventListener('click', controlid.closeControlIdModal);
+    document.getElementById('controlid-modal').addEventListener('click', (e) => { 
+        if (e.target.id === 'controlid-modal') controlid.closeControlIdModal(); 
+    });
+    
+    document.getElementById('controlid-test-btn').addEventListener('click', controlid.handleTestConnection);
+    document.getElementById('controlid-config-form').addEventListener('submit', controlid.handleSaveSettings);
+    
+    const controlidOpenDoorBtn = document.getElementById('controlid-open-door-btn');
+    if (controlidOpenDoorBtn) {
+        controlidOpenDoorBtn.addEventListener('click', controlid.handleOpenDoor);
+    }
+
+    const controlidSyncAllBtn = document.getElementById('controlid-sync-all-btn');
+    if (controlidSyncAllBtn) {
+        controlidSyncAllBtn.addEventListener('click', async () => {
+            ui.showToast('Iniciando sincronização em massa...', 'Control iD', 'info');
+            // Mock de sincronização de todas as reservas confirmadas
+            setTimeout(() => {
+                ui.showToast('Sincronização concluída! 0 novas credenciais geradas.', 'Control iD', 'success');
+            }, 1500);
+        });
+    }
+
+    // Inicializa o status do card se estivermos no dashboard
+    if (state.currentView === 'dashboard') {
+        controlid.initControlIdDashboard();
+    }
 }

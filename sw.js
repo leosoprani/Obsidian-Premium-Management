@@ -4,7 +4,7 @@
  * Garante funcionamento offline e instalação como app no iPhone e Android.
  */
 
-const CACHE_VERSION = 'v6';
+const CACHE_VERSION = 'v10';
 const CACHE_STATIC = `storey-luxor-static-${CACHE_VERSION}`;
 const CACHE_DYNAMIC = `storey-luxor-dynamic-${CACHE_VERSION}`;
 

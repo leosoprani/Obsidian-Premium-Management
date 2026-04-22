@@ -1,0 +1,245 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pré-Checkin - Obsidian</title>
+    <link rel="stylesheet" href="/css/index.css">
+    <!-- Ionicons -->
+    <script type="module" src="https://unpkg.com/ionicons@7.1.0/dist/ionicons/ionicons.esm.js"></script>
+    <script nomodule src="https://unpkg.com/ionicons@7.1.0/dist/ionicons/ionicons.js"></script>
+    <!-- Tailwind for rapid UI styling -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        body { background-color: #050505; color: #fff; font-family: 'Inter', sans-serif; }
+        .glass-panel {
+            background: rgba(25, 25, 25, 0.6);
+            backdrop-filter: blur(16px);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            border-radius: 24px;
+        }
+        .input-glass {
+            background: rgba(0, 0, 0, 0.3);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            color: #fff;
+            border-radius: 12px;
+            padding: 12px 16px;
+            width: 100%;
+            outline: none;
+            transition: all 0.3s ease;
+        }
+        .input-glass:focus {
+            border-color: #3b82f6;
+            background: rgba(0, 0, 0, 0.5);
+        }
+        .btn-primary {
+            background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%);
+            border: none;
+            color: white;
+            font-weight: 700;
+            padding: 16px;
+            border-radius: 16px;
+            width: 100%;
+            transition: transform 0.2s;
+        }
+        .btn-primary:active { transform: scale(0.98); }
+        .camera-container {
+            width: 100%; aspect-ratio: 1; 
+            background: #111; border-radius: 16px; 
+            overflow: hidden; position: relative;
+            border: 1px solid rgba(255,255,255,0.1);
+        }
+        video { width: 100%; height: 100%; object-fit: cover; transform: scaleX(-1); }
+        .face-overlay {
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            pointer-events: none;
+            background: radial-gradient(circle at center, transparent 40%, rgba(0,0,0,0.8) 70%);
+        }
+    </style>
+</head>
+<body class="antialiased min-h-screen flex flex-col items-center justify-center p-4">
+    <div class="w-full max-w-md mx-auto">
+        <!-- Header -->
+        <div class="text-center mb-8">
+            <h1 class="text-3xl font-black tracking-tighter mb-2" style="background: linear-gradient(to right, #fff, #888); -webkit-background-clip: text; color: transparent;">OBSIDIAN</h1>
+            <p class="text-sm text-gray-400 font-semibold tracking-widest uppercase">Premium Management</p>
+        </div>
+
+        <% if (reservation.preCheckinCompleted) { %>
+            <div class="glass-panel p-8 text-center">
+                <ion-icon name="checkmark-circle" class="text-green-500 text-6xl mb-4"></ion-icon>
+                <h2 class="text-2xl font-bold mb-2">Tudo Certo!</h2>
+                <p class="text-gray-400">Seu pré-checkin já foi realizado. Aguardamos você no Apto <%= reservation.apartment %>.</p>
+            </div>
+        <% } else { %>
+            <div class="glass-panel p-6" id="step-1">
+                <div class="mb-6 border-b border-gray-800 pb-4">
+                    <h2 class="text-xl font-bold mb-1">Olá, <%= reservation.guestName %>!</h2>
+                    <p class="text-sm text-gray-400">Complete seu cadastro para agilizar sua entrada.</p>
+                </div>
+
+                <form id="preCheckinForm">
+                    <div class="mb-4">
+                        <label class="block text-xs font-bold text-gray-500 mb-2 uppercase tracking-wider">Documento (CPF/Passaporte) *</label>
+                        <input type="text" id="doc" required class="input-glass" placeholder="000.000.000-00">
+                    </div>
+
+                    <div class="mb-4">
+                        <label class="block text-xs font-bold text-gray-500 mb-2 uppercase tracking-wider">Placa do Veículo (Opcional)</label>
+                        <input type="text" id="vehiclePlate" class="input-glass" placeholder="ABC-1234" style="text-transform: uppercase;">
+                    </div>
+
+                    <div class="flex gap-3 mb-6">
+                        <div class="flex-1">
+                            <label class="block text-xs font-bold text-gray-500 mb-2 uppercase tracking-wider">Modelo</label>
+                            <input type="text" id="vehicleModel" class="input-glass" placeholder="Ex: Corolla">
+                        </div>
+                        <div class="flex-1">
+                            <label class="block text-xs font-bold text-gray-500 mb-2 uppercase tracking-wider">Cor</label>
+                            <input type="text" id="vehicleColor" class="input-glass" placeholder="Ex: Prata">
+                        </div>
+                    </div>
+
+                    <button type="button" onclick="nextStep()" class="btn-primary flex items-center justify-center gap-2">
+                        Continuar para Foto <ion-icon name="arrow-forward"></ion-icon>
+                    </button>
+                </form>
+            </div>
+
+            <!-- STEP 2: CAMERA -->
+            <div class="glass-panel p-6 hidden" id="step-2">
+                <div class="mb-6 text-center">
+                    <h2 class="text-xl font-bold mb-1">Reconhecimento Facial</h2>
+                    <p class="text-sm text-gray-400">Tire uma selfie para liberar a porta automaticamente na sua chegada.</p>
+                </div>
+
+                <div class="camera-container mb-6" id="camera-container">
+                    <video id="video" autoplay playsinline></video>
+                    <div class="face-overlay">
+                        <div style="border: 2px dashed rgba(255,255,255,0.5); border-radius: 50%; width: 60%; height: 60%; position: absolute; top: 20%; left: 20%;"></div>
+                    </div>
+                    <canvas id="canvas" class="hidden"></canvas>
+                    <img id="photo-preview" class="hidden w-full h-full object-cover absolute top-0 left-0" style="transform: scaleX(-1);" />
+                </div>
+
+                <div class="flex gap-3" id="camera-controls">
+                    <button type="button" onclick="takePhoto()" class="btn-primary" style="background: #fff; color: #000;">
+                        Tirar Foto
+                    </button>
+                    <button type="button" onclick="skipPhoto()" class="p-4 rounded-2xl border border-gray-700 text-gray-400 font-bold w-1/3 text-center">
+                        Pular
+                    </button>
+                </div>
+
+                <div class="flex gap-3 hidden" id="preview-controls">
+                    <button type="button" onclick="retakePhoto()" class="p-4 rounded-2xl border border-gray-700 text-white font-bold w-1/3 text-center">
+                        Refazer
+                    </button>
+                    <button type="button" onclick="submitForm()" id="submitBtn" class="btn-primary flex-1">
+                        Finalizar
+                    </button>
+                </div>
+            </div>
+            
+            <div class="glass-panel p-8 text-center hidden" id="step-success">
+                <ion-icon name="checkmark-circle" class="text-green-500 text-6xl mb-4"></ion-icon>
+                <h2 class="text-2xl font-bold mb-2">Pronto!</h2>
+                <p class="text-gray-400">Seus dados foram enviados com sucesso. Tenha uma ótima estadia no Apto <%= reservation.apartment %>.</p>
+            </div>
+        <% } %>
+    </div>
+
+    <script>
+        const resId = '<%= reservation._id || reservation.id %>';
+        let facePhotoBase64 = null;
+        let stream = null;
+
+        function nextStep() {
+            if (!document.getElementById('doc').value) {
+                alert('Por favor, informe seu documento.');
+                return;
+            }
+            document.getElementById('step-1').classList.add('hidden');
+            document.getElementById('step-2').classList.remove('hidden');
+            startCamera();
+        }
+
+        async function startCamera() {
+            try {
+                stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'user' } });
+                document.getElementById('video').srcObject = stream;
+            } catch (err) {
+                console.error("Camera access denied or error:", err);
+                alert('Não foi possível acessar a câmera do dispositivo. Você pode pular esta etapa.');
+            }
+        }
+
+        function takePhoto() {
+            const video = document.getElementById('video');
+            const canvas = document.getElementById('canvas');
+            canvas.width = video.videoWidth;
+            canvas.height = video.videoHeight;
+            canvas.getContext('2d').drawImage(video, 0, 0, canvas.width, canvas.height);
+            
+            facePhotoBase64 = canvas.toDataURL('image/jpeg', 0.8);
+            
+            document.getElementById('photo-preview').src = facePhotoBase64;
+            document.getElementById('photo-preview').classList.remove('hidden');
+            document.getElementById('camera-controls').classList.add('hidden');
+            document.getElementById('preview-controls').classList.remove('hidden');
+            
+            if(stream) {
+                stream.getTracks().forEach(track => track.stop());
+            }
+        }
+
+        function retakePhoto() {
+            facePhotoBase64 = null;
+            document.getElementById('photo-preview').classList.add('hidden');
+            document.getElementById('camera-controls').classList.remove('hidden');
+            document.getElementById('preview-controls').classList.add('hidden');
+            startCamera();
+        }
+
+        function skipPhoto() {
+            facePhotoBase64 = null;
+            submitForm();
+        }
+
+        async function submitForm() {
+            const btn = document.getElementById('submitBtn');
+            if(btn) {
+                btn.innerHTML = 'Enviando...';
+                btn.disabled = true;
+            }
+            
+            const data = {
+                doc: document.getElementById('doc').value,
+                vehiclePlate: document.getElementById('vehiclePlate').value,
+                vehicleModel: document.getElementById('vehicleModel').value,
+                vehicleColor: document.getElementById('vehicleColor').value,
+                facePhoto: facePhotoBase64
+            };
+
+            try {
+                const response = await fetch(`/api/pre-checkin/${resId}`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(data)
+                });
+                
+                if(response.ok) {
+                    document.getElementById('step-2').classList.add('hidden');
+                    document.getElementById('step-success').classList.remove('hidden');
+                } else {
+                    alert('Erro ao enviar dados. Tente novamente.');
+                    if(btn) { btn.innerHTML = 'Finalizar'; btn.disabled = false; }
+                }
+            } catch(e) {
+                alert('Erro de conexão.');
+                if(btn) { btn.innerHTML = 'Finalizar'; btn.disabled = false; }
+            }
+        }
+    </script>
+</body>
+</html>

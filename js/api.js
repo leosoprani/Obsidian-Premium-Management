@@ -65,10 +65,10 @@ export async function fetchInitialData() {
         fetch(`${API_BASE_URL}/guests`, { headers: getAuthHeaders() }),
         fetch(`${API_BASE_URL}/reservations`, { headers: getAuthHeaders() }),
         fetch(`${API_BASE_URL}/employees`, { headers: getAuthHeaders() }),
-        fetch(`${API_BASE_URL}/properties`, { headers: getAuthHeaders() })
+        fetch(`${API_BASE_URL}/properties`, { headers: getAuthHeaders() }),
+        fetch(`${API_BASE_URL}/tasks`, { headers: getAuthHeaders() })
     ];
 
-    // Adiciona a busca de despesas apenas se o usuário for admin
     if (userRole === 'admin') {
         fetchPromises.push(fetch(`${API_BASE_URL}/expenses`, { headers: getAuthHeaders() }));
     }
@@ -79,11 +79,11 @@ export async function fetchInitialData() {
     const allReservations = await handleResponse(responses[1]);
     const employees = await handleResponse(responses[2]);
     const properties = await handleResponse(responses[3]);
+    const tasks = await handleResponse(responses[4]);
 
-    // Se o usuário for admin, processa a resposta das despesas, senão, retorna um array vazio.
-    const expenses = userRole === 'admin' && responses[4] ? await handleResponse(responses[4]) : [];
+    const expenses = userRole === 'admin' && responses[5] ? await handleResponse(responses[5]) : [];
 
-    return [guests, allReservations, employees, expenses, properties];
+    return [guests, allReservations, employees, expenses, properties, tasks];
 }
 
 /**
@@ -190,6 +190,25 @@ export async function saveTask(taskData) {
         headers: getAuthHeaders(),
         body: JSON.stringify(taskData),
     });
+    return handleResponse(response);
+}
+
+/**
+ * Busca todas as tarefas.
+ * @returns {Promise<Array>}
+ */
+export async function getTasks() {
+    const response = await fetch(`${API_BASE_URL}/tasks`, { headers: getAuthHeaders() });
+    return handleResponse(response);
+}
+
+/**
+ * Deleta uma tarefa.
+ * @param {string} taskId - O ID da tarefa.
+ * @returns {Promise<object>}
+ */
+export async function deleteTask(taskId) {
+    const response = await fetch(`${API_BASE_URL}/tasks/${taskId}`, { method: 'DELETE', headers: getAuthHeaders() });
     return handleResponse(response);
 }
 
@@ -463,6 +482,61 @@ export async function getOnlineUsers() {
 export async function clearChatHistory(partnerUsername) {
     const response = await fetch(`${API_BASE_URL}/messages/history/${partnerUsername}`, {
         method: 'DELETE', headers: getAuthHeaders()
+    });
+    return handleResponse(response);
+}
+
+/**
+ * Busca as configurações do Control iD.
+ */
+export async function getControlIdSettings() {
+    const response = await fetch(`${API_BASE_URL}/controlid/settings`, { headers: getAuthHeaders() });
+    return handleResponse(response);
+}
+
+/**
+ * Salva as configurações do Control iD.
+ */
+export async function saveControlIdSettings(settings) {
+    const response = await fetch(`${API_BASE_URL}/controlid/settings`, {
+        method: 'POST',
+        headers: getAuthHeaders(),
+        body: JSON.stringify(settings)
+    });
+    return handleResponse(response);
+}
+
+/**
+ * Testa a conexão com o dispositivo Control iD.
+ */
+export async function testControlIdConnection(settings) {
+    const response = await fetch(`${API_BASE_URL}/controlid/test`, {
+        method: 'POST',
+        headers: getAuthHeaders(),
+        body: JSON.stringify(settings)
+    });
+    return handleResponse(response);
+}
+
+/**
+ * Gera um QR Code para uma reserva específica.
+ */
+export async function generateControlIdQRCode(reservationId) {
+    const response = await fetch(`${API_BASE_URL}/controlid/generate-qrcode`, {
+        method: 'POST',
+        headers: getAuthHeaders(),
+        body: JSON.stringify({ reservationId })
+    });
+    return handleResponse(response);
+}
+
+/**
+ * Aciona a abertura remota da porta via Control iD.
+ */
+export async function openControlIdDoor() {
+    const response = await fetch(`${API_BASE_URL}/controlid/open-door`, {
+        method: 'POST',
+        headers: getAuthHeaders()
     });
     return handleResponse(response);
 }

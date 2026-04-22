@@ -1,7 +1,7 @@
 import React, { useEffect, useState, useCallback } from 'react';
 import { 
   View, Text, StyleSheet, TouchableOpacity, 
-  ActivityIndicator, RefreshControl, ScrollView, Dimensions, Image
+  ActivityIndicator, RefreshControl, ScrollView, Dimensions, Image, Alert
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { StatusBar } from 'expo-status-bar';
@@ -114,6 +114,19 @@ export default function AdminDashboard({ onLogout }) {
       setRefreshing(false);
     }
   }, []);
+
+  const handleRemoteOpen = async () => {
+    try {
+        const response = await api.post('/controlid/open-door');
+        if (response.data && response.data.success) {
+            Alert.alert("Acesso Liberado", "A porta foi aberta com sucesso!");
+        } else {
+            Alert.alert("Aviso", "Não foi possível confirmar a abertura da porta.");
+        }
+    } catch (error) {
+        Alert.alert("Erro de Conexão", "Não foi possível enviar o comando para a fechadura.");
+    }
+  };
 
   useEffect(() => { loadData(); }, [loadData]);
   if (loading) {
@@ -277,7 +290,7 @@ export default function AdminDashboard({ onLogout }) {
         <View style={styles.section}>
             <Text style={[styles.sectionTitle, { color: activeTheme.colors.textSecondary }]}>Atalhos Operacionais</Text>
             
-            <View style={{ flexDirection: 'row', gap: 12, marginBottom: 25 }}>
+            <View style={{ flexDirection: 'row', gap: 10, marginBottom: 25 }}>
                 <TouchableOpacity 
                     onPress={() => setShowAddResModal(true)}
                     activeOpacity={0.8}
@@ -285,10 +298,10 @@ export default function AdminDashboard({ onLogout }) {
                 >
                     <LinearGradient
                         colors={[activeTheme.colors.primary, '#0055ff']}
-                        style={{ borderRadius: 20, padding: 18, alignItems: 'center', gap: 8, height: 110, justifyContent: 'center' }}
+                        style={{ borderRadius: 20, padding: 12, alignItems: 'center', gap: 8, height: 110, justifyContent: 'center' }}
                     >
                         <Image source={require('../../assets/icons/add_white.png')} style={{ width: 20, height: 20 }} resizeMode="contain" />
-                        <Text style={{ color: '#fff', fontSize: 13, fontWeight: '900', textAlign: 'center' }}>NOVA RESERVA</Text>
+                        <Text style={{ color: '#fff', fontSize: 11, fontWeight: '900', textAlign: 'center' }}>NOVA RESERVA</Text>
                     </LinearGradient>
                 </TouchableOpacity>
 
@@ -298,10 +311,23 @@ export default function AdminDashboard({ onLogout }) {
                     style={{ flex: 1 }}
                 >
                     <View
-                        style={{ borderRadius: 20, padding: 18, alignItems: 'center', gap: 8, backgroundColor: activeTheme.colors.glass, borderWidth: 1, borderColor: activeTheme.colors.glassBorder, height: 110, justifyContent: 'center' }}
+                        style={{ borderRadius: 20, padding: 12, alignItems: 'center', gap: 8, backgroundColor: activeTheme.colors.glass, borderWidth: 1, borderColor: activeTheme.colors.glassBorder, height: 110, justifyContent: 'center' }}
                     >
                         <Image source={require('../../assets/icons/person_active.png')} style={{ width: 20, height: 20, tintColor: activeTheme.colors.text }} resizeMode="contain" />
-                        <Text style={{ color: activeTheme.colors.text, fontSize: 13, fontWeight: '900', textAlign: 'center' }}>CADASTRO HÓSPEDE</Text>
+                        <Text style={{ color: activeTheme.colors.text, fontSize: 11, fontWeight: '900', textAlign: 'center' }}>NOVO HÓSPEDE</Text>
+                    </View>
+                </TouchableOpacity>
+
+                <TouchableOpacity 
+                    onPress={handleRemoteOpen}
+                    activeOpacity={0.8}
+                    style={{ flex: 1 }}
+                >
+                    <View
+                        style={{ borderRadius: 20, padding: 12, alignItems: 'center', gap: 8, backgroundColor: activeTheme.colors.glass, borderWidth: 1, borderColor: activeTheme.colors.secondary + '50', height: 110, justifyContent: 'center' }}
+                    >
+                        <Image source={require('../../assets/icons/accesses_active.png')} style={{ width: 20, height: 20, tintColor: activeTheme.colors.secondary }} resizeMode="contain" />
+                        <Text style={{ color: activeTheme.colors.secondary, fontSize: 11, fontWeight: '900', textAlign: 'center' }}>ABRIR PORTA</Text>
                     </View>
                 </TouchableOpacity>
             </View>

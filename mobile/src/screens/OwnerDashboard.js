@@ -2,7 +2,7 @@ import React, { useEffect, useState, useCallback, useMemo } from 'react';
 import { 
   View, Text, StyleSheet, TouchableOpacity, FlatList, ScrollView,
   ActivityIndicator, RefreshControl, Dimensions,
-  Platform, Image, Alert
+  Platform, Image, Alert, Linking, Share, Modal
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -12,6 +12,7 @@ import { BlurView } from 'expo-blur';
 import { Ionicons } from '@expo/vector-icons';
 import api from '../services/api';
 import { formatDateBR } from '../utils/dateUtils';
+import DateTimePicker from '@react-native-community/datetimepicker';
 import { ThemeContext } from '../styles/ThemeContext';
 import MeshBackground from '../components/MeshBackground';
 import { useTabBarScroll } from '../hooks/useTabBarScroll';
@@ -22,7 +23,7 @@ import AddGuestModal from './owner/AddGuestModal';
 
 const { width, height } = Dimensions.get('window');
 
-function ReservationCard({ item, activeTheme }) {
+function ReservationCard({ item, activeTheme, onManage }) {
   const STATUS_CONFIG = {
     'confirmed':        { label: 'Confirmada',   color: activeTheme.colors.secondary, bg: `${activeTheme.colors.secondary}20`, icon: require('../../assets/icons/check_active.png') },
     'pending':          { label: 'Pendente',     color: activeTheme.colors.warning, bg: `${activeTheme.colors.warning}20`, icon: require('../../assets/icons/bulb_active.png') },
@@ -42,14 +43,69 @@ function ReservationCard({ item, activeTheme }) {
   };
   
   return (
-    <View style={styles.cardWrapper}>
+    <TouchableOpacity 
+        activeOpacity={0.7} 
+        style={styles.cardWrapper}
+        onPress={() => {
+            if (item.controlid_qrcode || item.controlid_face_registered) {
+                let msg = "Acesso configurado para este hóspede.\n";
+                if (item.controlid_face_registered) msg += "• Reconhecimento Facial: Ativo\n";
+                if (item.controlid_qrcode) msg += "• QR Code: Gerado";
+
+                const buttons = [{ text: 'Fechar', style: 'cancel' }];
+                
+                if (item.controlid_qrcode) {
+                    const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=500x500&data=${encodeURIComponent(item.controlid_qrcode)}`;
+                    
+                    buttons.push({
+                        text: 'Ver/Baixar',
+                        onPress: () => {
+                            Linking.openURL(qrUrl).catch(() => Alert.alert("Erro", "Não foi possível abrir a imagem."));
+                        }
+                    });
+                    
+                    buttons.push({
+                        text: 'Compartilhar',
+                        onPress: async () => {
+                            try {
+                                await Share.share({
+                                    message: `Olá! Aqui está o seu QR Code de acesso para o Apto ${item.apartment}.\n\nClique no link abaixo para visualizar/salvar o seu passe:\n${qrUrl}\n\nBoa estadia!`
+                                });
+                            } catch (error) {
+                                Alert.alert("Erro", "Não foi possível compartilhar o QR Code.");
+                            }
+                        }
+                    });
+                }
+                Alert.alert("Acesso Control iD", msg, buttons);
+            } else {
+                Alert.alert("Detalhes da Reserva", `Hóspede: ${item.guestName}\nApto: ${item.apartment}\nPeríodo: ${formatDateBR(item.startDate)} - ${formatDateBR(item.endDate)}\nStatus: ${status.label}`);
+            }
+        }}
+    >
         <View style={[styles.card, { backgroundColor: activeTheme.colors.glass, borderColor: activeTheme.colors.glassBorder }]}>
             <View style={styles.cardHeader}>
                 <View style={[styles.cardAptBadge, { backgroundColor: activeTheme.colors.glassSecondary }]}>
                     <Text style={[styles.cardAptText, { color: activeTheme.colors.primary }]}># {item.apartment || '—'}</Text>
                 </View>
-                <View style={[styles.badge, { backgroundColor: status.bg }]}>
-                <Text style={[styles.badgeText, { color: status.color }]}>{status.label.toUpperCase()}</Text>
+                
+                <View style={{ flexDirection: 'row', gap: 6, alignItems: 'center' }}>
+                    {/* Badges de Acesso */}
+                    {item.controlid_face_registered && (
+                        <View style={[styles.accessBadge, { backgroundColor: '#2563eb20', borderColor: '#2563eb50' }]}>
+                            <Ionicons name="scan" size={10} color="#2563eb" />
+                            <Text style={[styles.accessBadgeText, { color: '#2563eb' }]}>FACE</Text>
+                        </View>
+                    )}
+                    {item.controlid_qrcode && (
+                        <View style={[styles.accessBadge, { backgroundColor: '#16a34a20', borderColor: '#16a34a50' }]}>
+                            <Ionicons name="qr-code" size={10} color="#16a34a" />
+                            <Text style={[styles.accessBadgeText, { color: '#16a34a' }]}>QR</Text>
+                        </View>
+                    )}
+                    <View style={[styles.badge, { backgroundColor: status.bg }]}>
+                        <Text style={[styles.badgeText, { color: status.color }]}>{status.label.toUpperCase()}</Text>
+                    </View>
                 </View>
             </View>
 
@@ -69,7 +125,17 @@ function ReservationCard({ item, activeTheme }) {
                     </View>
                     <Text style={[styles.dateText, { color: activeTheme.colors.textSecondary }]}>{formatDateBR(item.startDate)} — {formatDateBR(item.endDate)}</Text>
                 </View>
-                {item.price ? (
+                
+                {item.status === 'confirmed' || item.status === 'checked-in' ? (
+                    <View style={{ flexDirection: 'row', gap: 6 }}>
+                        <TouchableOpacity style={[styles.actionBtn, { backgroundColor: activeTheme.colors.primary + '20' }]} onPress={() => onManage && onManage(item, 'extend')}>
+                            <Text style={{ color: activeTheme.colors.primary, fontSize: 10, fontWeight: '800' }}>ESTENDER</Text>
+                        </TouchableOpacity>
+                        <TouchableOpacity style={[styles.actionBtn, { backgroundColor: activeTheme.colors.error + '20' }]} onPress={() => onManage && onManage(item, 'cancel')}>
+                            <Text style={{ color: activeTheme.colors.error, fontSize: 10, fontWeight: '800' }}>CANCELAR</Text>
+                        </TouchableOpacity>
+                    </View>
+                ) : item.price ? (
                     <View style={styles.priceRow}>
                         <Text style={[styles.priceSymbol, { color: activeTheme.colors.secondary }]}>R$</Text>
                         <Text style={[styles.priceValue, { color: activeTheme.colors.secondary }]}>{Number(item.price).toLocaleString('pt-BR')}</Text>
@@ -77,7 +143,7 @@ function ReservationCard({ item, activeTheme }) {
                 ) : null}
             </View>
         </View>
-    </View>
+    </TouchableOpacity>
   );
 }
 
@@ -96,6 +162,11 @@ export default function OwnerDashboard({ selectedApartment, navigate }) {
   // Modal States
   const [showRequestModal, setShowRequestModal] = useState(false);
   const [showAddGuestModal, setShowAddGuestModal] = useState(false);
+
+  // Extend States
+  const [extendItem, setExtendItem] = useState(null);
+  const [showExtendPicker, setShowExtendPicker] = useState(false);
+  const [newEndDate, setNewEndDate] = useState(new Date());
 
   const loadData = useCallback(async () => {
     try {
@@ -208,6 +279,134 @@ export default function OwnerDashboard({ selectedApartment, navigate }) {
     );
   };
 
+  const handleRemoteOpen = async () => {
+    try {
+        const response = await api.post('/controlid/open-door');
+        if (response.data && response.data.success) {
+            Alert.alert("Acesso Liberado", "A porta foi aberta com sucesso!");
+        } else {
+            Alert.alert("Aviso", "Não foi possível confirmar a abertura da porta.");
+        }
+    } catch (error) {
+        Alert.alert("Erro de Conexão", "Não foi possível enviar o comando para a fechadura.");
+    }
+  };
+
+  const handleManageReservation = async (item, action) => {
+      if (action === 'cancel') {
+          Alert.alert("Cancelar Reserva", "Tem certeza que deseja cancelar esta reserva?", [
+              { text: "Não", style: "cancel" },
+              { text: "Sim, Cancelar", style: "destructive", onPress: async () => {
+                  try {
+                      await api.post('/reservations', { ...item, status: 'canceled' });
+                      Alert.alert("Sucesso", "Reserva cancelada com sucesso.");
+                      loadData();
+                  } catch (error) {
+                      Alert.alert("Erro", "Não foi possível cancelar a reserva.");
+                  }
+              }}
+          ]);
+      } else if (action === 'extend') {
+          let currentEnd = new Date();
+          if (item.endDate) {
+              const parsed = new Date(item.endDate + 'T12:00:00Z');
+              if (!isNaN(parsed.getTime())) {
+                  currentEnd = parsed;
+              }
+          }
+          currentEnd.setDate(currentEnd.getDate() + 1);
+          setNewEndDate(currentEnd);
+          setExtendItem(item);
+          setShowExtendPicker(true);
+      }
+  };
+
+  const handleConfirmExtend = async () => {
+      setShowExtendPicker(false);
+      if (!extendItem) return;
+
+      try {
+          const newEndStr = newEndDate.toISOString().split('T')[0];
+          
+          if (new Date(newEndStr) <= new Date(extendItem.endDate)) {
+              Alert.alert("Atenção", "A nova data precisa ser posterior à data original de check-out.");
+              return;
+          }
+
+          const updatedRes = { ...extendItem, endDate: newEndStr };
+          await api.post('/reservations', updatedRes);
+
+          let msg = `Estadia estendida para ${formatDateBR(newEndStr)} com sucesso!`;
+          if (extendItem.controlid_qrcode || extendItem.controlid_face_registered) {
+              msg += "\n\nA nova validade foi atualizada de forma remota no equipamento Control iD Face Max.\nNão é necessário gerar um novo QR Code, o mesmo passe continua funcionando até a nova data!";
+          }
+
+          Alert.alert("Sucesso", msg);
+          setExtendItem(null);
+          loadData();
+      } catch (error) {
+          Alert.alert("Erro", "Não foi possível estender a estadia.");
+      }
+  };
+
+  // DatePicker component
+  const DatePickerModal = ({ visible, value, onChange, onClose, title, onConfirm }) => {
+    if (!visible) return null;
+
+    if (Platform.OS === 'android') {
+      return (
+        <DateTimePicker
+          value={value}
+          mode="date"
+          display="default"
+          onChange={(e, d) => {
+            if (e.type === 'dismissed') {
+                onClose();
+            } else if (d) {
+                onChange(e, d);
+                onClose();
+                Alert.alert(
+                    "Confirmar", 
+                    `Deseja estender a estadia até ${formatDateBR(d.toISOString().split('T')[0])}?`, 
+                    [{ text: "Cancelar", style: "cancel" }, { text: "Sim", onPress: handleConfirmExtend }]
+                );
+            }
+          }}
+        />
+      );
+    }
+
+    return (
+      <Modal visible={visible} transparent animationType="fade">
+        <View style={styles.calendarOverlay}>
+          <View style={[styles.calendarCard, { backgroundColor: activeTheme.colors.surface, borderColor: activeTheme.colors.glassBorder }]}>
+            <Text style={[styles.calendarTitle, { color: activeTheme.colors.text }]}>{title}</Text>
+            <DateTimePicker
+              value={value}
+              mode="date"
+              display="inline"
+              onChange={onChange}
+              themeVariant="dark"
+              textColor="#ffffff"
+            />
+            <View style={{ flexDirection: 'row', gap: 10, marginTop: 20 }}>
+                <TouchableOpacity style={[styles.calendarDoneBtn, { flex: 1, backgroundColor: activeTheme.colors.glassSecondary }]} onPress={onClose}>
+                    <View style={styles.calendarDoneGrad}>
+                        <Text style={[styles.calendarDoneText, { color: activeTheme.colors.textSecondary }]}>CANCELAR</Text>
+                    </View>
+                </TouchableOpacity>
+                <TouchableOpacity style={[styles.calendarDoneBtn, { flex: 1 }]} onPress={handleConfirmExtend}>
+                    <LinearGradient colors={[activeTheme.colors.primary, '#0055ff']} style={styles.calendarDoneGrad}>
+                        <Text style={styles.calendarDoneText}>CONFIRMAR</Text>
+                    </LinearGradient>
+                </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      </Modal>
+    );
+  };
+
   if (loading) {
     return (
         <View style={[styles.centered, { backgroundColor: activeTheme.colors.background }]}>
@@ -296,28 +495,35 @@ export default function OwnerDashboard({ selectedApartment, navigate }) {
         {/* QUICK SHORTCUTS */}
         <View style={styles.shortcutsSection}>
             <Text style={[styles.sectionCaption, { color: activeTheme.colors.textTertiary }]}>ATALHOS RÁPIDOS</Text>
-            <View style={styles.shortcutRow}>
-                <TouchableOpacity style={styles.shortcutItem} onPress={() => setShowAddGuestModal(true)}>
+            <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.shortcutRow}>
+                <TouchableOpacity style={styles.shortcutItem} onPress={handleRemoteOpen}>
                     <View style={[styles.shortcutIcon, { backgroundColor: activeTheme.colors.secondary + '20' }]}>
-                        <Ionicons name="person-add-outline" size={24} color={activeTheme.colors.secondary} />
+                        <Ionicons name="key-outline" size={24} color={activeTheme.colors.secondary} />
+                    </View>
+                    <Text style={[styles.shortcutText, { color: activeTheme.colors.text }]}>Abrir Porta</Text>
+                </TouchableOpacity>
+
+                <TouchableOpacity style={styles.shortcutItem} onPress={() => setShowAddGuestModal(true)}>
+                    <View style={[styles.shortcutIcon, { backgroundColor: activeTheme.colors.primary + '20' }]}>
+                        <Ionicons name="person-add-outline" size={24} color={activeTheme.colors.primary} />
                     </View>
                     <Text style={[styles.shortcutText, { color: activeTheme.colors.text }]}>Novo Hóspede</Text>
                 </TouchableOpacity>
 
                 <TouchableOpacity style={styles.shortcutItem} onPress={() => setShowRequestModal(true)}>
-                    <View style={[styles.shortcutIcon, { backgroundColor: activeTheme.colors.primary + '20' }]}>
-                        <Ionicons name="calendar-outline" size={24} color={activeTheme.colors.primary} />
+                    <View style={[styles.shortcutIcon, { backgroundColor: activeTheme.colors.accent + '20' }]}>
+                        <Ionicons name="calendar-outline" size={24} color={activeTheme.colors.accent} />
                     </View>
                     <Text style={[styles.shortcutText, { color: activeTheme.colors.text }]}>Nova Reserva</Text>
                 </TouchableOpacity>
 
                 <TouchableOpacity style={styles.shortcutItem} onPress={handleGenerateReport}>
-                    <View style={[styles.shortcutIcon, { backgroundColor: activeTheme.colors.accent + '20' }]}>
-                        <Ionicons name="document-text-outline" size={24} color={activeTheme.colors.accent} />
+                    <View style={[styles.shortcutIcon, { backgroundColor: activeTheme.colors.warning + '20' }]}>
+                        <Ionicons name="document-text-outline" size={24} color={activeTheme.colors.warning} />
                     </View>
                     <Text style={[styles.shortcutText, { color: activeTheme.colors.text }]}>Relatórios</Text>
                 </TouchableOpacity>
-            </View>
+            </ScrollView>
         </View>
 
         {/* PERFORMANCE CHART */}
@@ -383,7 +589,7 @@ export default function OwnerDashboard({ selectedApartment, navigate }) {
             
             {filteredList.length > 0 ? (
                 filteredList.slice(0, 10).map((item) => (
-                    <ReservationCard key={item.id || item._id} item={item} activeTheme={activeTheme} />
+                    <ReservationCard key={item.id || item._id} item={item} activeTheme={activeTheme} onManage={handleManageReservation} />
                 ))
             ) : (
                 <View style={styles.emptyActivity}>
@@ -408,6 +614,13 @@ export default function OwnerDashboard({ selectedApartment, navigate }) {
               setShowAddGuestModal(false);
               loadData();
           }}
+      />
+      <DatePickerModal 
+          visible={showExtendPicker}
+          value={newEndDate}
+          title="ATÉ QUANDO DESEJA ESTENDER?"
+          onChange={(e, d) => { if (d) setNewEndDate(d); }}
+          onClose={() => setShowExtendPicker(false)}
       />
     </View>
   );
@@ -496,8 +709,8 @@ const styles = StyleSheet.create({
   metricSub: { fontSize: 10, fontWeight: '700', marginTop: 4, opacity: 0.5 },
 
   shortcutsSection: { marginBottom: 35 },
-  shortcutRow: { flexDirection: 'row', justifyContent: 'space-between', paddingHorizontal: 25, marginTop: 15 },
-  shortcutItem: { alignItems: 'center', width: (width - 50) / 3.5 },
+  shortcutRow: { flexDirection: 'row', gap: 15, paddingHorizontal: 25, marginTop: 15 },
+  shortcutItem: { alignItems: 'center', width: 75 },
   shortcutIcon: { 
     width: 56, 
     height: 56, 
@@ -567,4 +780,13 @@ const styles = StyleSheet.create({
   priceRow: { flexDirection: 'row', alignItems: 'baseline', gap: 2 },
   priceSymbol: { fontSize: 10, fontWeight: '700' },
   priceValue: { fontSize: 16, fontWeight: '800' },
+  accessBadge: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 6, paddingVertical: 4, borderRadius: 6, borderWidth: 1, gap: 4 },
+  accessBadgeText: { fontSize: 8, fontWeight: '900' },
+  actionBtn: { paddingHorizontal: 12, paddingVertical: 6, borderRadius: 8 },
+  calendarOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.8)', justifyContent: 'center', alignItems: 'center' },
+  calendarCard: { width: '90%', borderRadius: 30, padding: 20, borderWidth: 1 },
+  calendarTitle: { fontSize: 14, fontWeight: '900', textAlign: 'center', marginBottom: 20, letterSpacing: 1 },
+  calendarDoneBtn: { borderRadius: 15, overflow: 'hidden' },
+  calendarDoneGrad: { height: 50, justifyContent: 'center', alignItems: 'center' },
+  calendarDoneText: { color: '#fff', fontWeight: '900' },
 });

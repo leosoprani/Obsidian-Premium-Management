@@ -17,10 +17,12 @@
         --brand-purple: #f790e0;
         --brand-red: #ff6e84;
         --brand-yellow: #f7b22c;
+        --brand-orange: #ff9f43;
+        --brand-slate: #94a3b8;
         --brand-teal: #3eea9b;
         --today-bg: rgba(62, 101, 255, 0.15);
         --today-text: #97a9ff;
-        --calendar-radius: 18px;
+        --calendar-radius: 2rem;
     }
 
     /* Removendo estilos liquid-glass pois adotamos Obsidian 100% */
@@ -194,14 +196,16 @@
     .calendar-table td {
         vertical-align: middle;
         height: 52px;
-        min-width: 150px;
+        min-width: 45px; /* Reduzido para mostrar mais dias */
         text-align: center;
         border: 1px solid var(--border-color) !important;
+        padding: 0 !important;
     }
 
     .calendar-header-cell {
-        font-size: 0.8rem;
+        font-size: 0.7rem;
         font-weight: 600;
+        padding: 4px 2px !important;
     }
 
     .sticky-col-bootstrap {

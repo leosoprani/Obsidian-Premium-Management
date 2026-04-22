@@ -128,6 +128,7 @@ export function openReservationModal(id = null, reservations, guests) {
     const deleteBtn = document.getElementById('delete-reservation-btn');
     const cancelReservationBtn = document.getElementById('cancel-reservation-btn');
     const approveReservationBtn = document.getElementById('approve-reservation-btn');
+    const controlIdQRBtn = document.getElementById('controlid-generate-qr-modal-btn');
 
     const isOwner = window.app.state.userRole === 'owner';
     const isAdmin = window.app.state.userRole === 'admin';
@@ -138,6 +139,7 @@ export function openReservationModal(id = null, reservations, guests) {
     deleteBtn.classList.add('hidden');
     cancelReservationBtn.classList.add('hidden');
     if (approveReservationBtn) approveReservationBtn.classList.add('hidden');
+    if (controlIdQRBtn) controlIdQRBtn.classList.add('hidden');
 
     // Re-habilita todos os campos antes de abrir
     form.querySelectorAll('input, select, textarea').forEach(field => {
@@ -207,6 +209,67 @@ export function openReservationModal(id = null, reservations, guests) {
             if (isAdmin && reservation.status === 'pending-approval' && approveReservationBtn) {
                 approveReservationBtn.classList.remove('hidden');
                 approveReservationBtn.onclick = () => window.app.handlers.approveReservationHandler(reservation.id);
+            }
+
+            // Mostra botão de QR Code se estiver confirmada ou em check-in
+            const controlIdFaceBtn = document.getElementById('controlid-register-face-btn');
+            const preCheckinBtn = document.getElementById('pre-checkin-link-btn');
+            
+            if (isAdmin && (reservation.status === 'confirmed' || reservation.status === 'checked-in' || reservation.status === 'pending-approval')) {
+                if (preCheckinBtn) {
+                    preCheckinBtn.classList.remove('hidden');
+                    preCheckinBtn.onclick = () => {
+                        const link = `${window.location.origin}/pre-checkin/${reservation.id}`;
+                        navigator.clipboard.writeText(link).then(() => {
+                            showAlert(`Link de Pré-Checkin copiado com sucesso!<br><br><a href="${link}" target="_blank" style="color:#3b82f6; text-decoration:underline;">${link}</a>`);
+                        }).catch(() => {
+                            prompt("Copie o link abaixo:", link);
+                        });
+                    };
+                }
+            }
+
+            if (isAdmin && (reservation.status === 'confirmed' || reservation.status === 'checked-in')) {
+                if (controlIdQRBtn) {
+                    controlIdQRBtn.classList.remove('hidden');
+                    if (reservation.controlid_synced) {
+                        controlIdQRBtn.innerHTML = '<i data-lucide="check-circle"></i> Ver QR Code';
+                        controlIdQRBtn.style.backgroundColor = '#1b5e20'; // Green
+                    } else {
+                        controlIdQRBtn.innerHTML = '<i data-lucide="qr-code"></i> Gerar QR Code';
+                        controlIdQRBtn.style.backgroundColor = '#000';
+                    }
+                    controlIdQRBtn.onclick = () => {
+                        if (reservation.controlid_synced) {
+                            showAlert(`QR Code já gerado: <b>${reservation.controlid_qrcode}</b>`);
+                        } else {
+                            import('./controlid.js').then(m => m.handleGenerateQRCode(reservation.id).then(() => {
+                                // Atualiza o próprio modal
+                                openReservationModal(reservation.id, reservations, guests);
+                            }));
+                        }
+                    };
+                }
+                
+                if (controlIdFaceBtn) {
+                    controlIdFaceBtn.classList.remove('hidden');
+                    if (reservation.controlid_face_registered) {
+                        controlIdFaceBtn.innerHTML = '<i data-lucide="check-circle"></i> Face Registrada';
+                        controlIdFaceBtn.style.backgroundColor = '#1b5e20'; // Green
+                        controlIdFaceBtn.onclick = () => showAlert('Reconhecimento Facial já está configurado para este hóspede.');
+                    } else {
+                        controlIdFaceBtn.innerHTML = '<i data-lucide="scan-face"></i> Registrar Face';
+                        controlIdFaceBtn.style.backgroundColor = '#2563eb'; // Blue
+                        controlIdFaceBtn.onclick = () => {
+                            import('./controlid.js').then(m => m.handleRegisterFace(reservation.id).then(() => {
+                                openReservationModal(reservation.id, reservations, guests);
+                            }));
+                        };
+                    }
+                }
+                window.lucide.createIcons(); // Garante que os ícones novos sejam renderizados
+            } else if (controlIdFaceBtn) {
+                controlIdFaceBtn.classList.add('hidden');
             }
 
             // Se for proprietário e a reserva NÃO estiver pendente de aprovação, torna o form read-only

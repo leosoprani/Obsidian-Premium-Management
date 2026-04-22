@@ -7,6 +7,7 @@ import * as chat from './chat.js';
 import { setupEventListeners } from './events.js';
 import { skeleton } from './skeleton.js';
 import * as sync from './sync.js';
+import * as controlid from './controlid.js';
 
 export const db = new window.Dexie('FlatManagerDB');
 db.version(6).stores({
@@ -103,9 +104,7 @@ document.addEventListener('DOMContentLoaded', () => {
             users:        () => skeleton.showTable('system-users-list-container', 6, 4),
             dashboard:    () => skeleton.showDashboard(),
         };
-        console.log(`[SwitchView] Switching to: ${viewName}`);
         if (containerMap[viewName]) {
-            console.log(`[SwitchView] Showing skeleton for: ${viewName}`);
             containerMap[viewName]();
         }
 
@@ -148,6 +147,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     ui.renderOccupancyChart(reservations, properties);
                     ui.renderApartmentOccupancyChart(reservations, properties);
                     ui.renderMonthlyTrendChart(reservations, currentDate, properties);
+                    controlid.initControlIdDashboard();
                     break;
                 case 'calendar':
                     ui.renderCalendar(currentDate, selectedDate, firstReservationDate, reservations, guests, properties);
@@ -441,6 +441,23 @@ document.addEventListener('DOMContentLoaded', () => {
                     const index = window.app.state.reservations.findIndex(r => r.id === id);
                     if (index > -1) window.app.state.reservations[index] = updatedReservation;
                     
+                    // Lógica Control iD: Se autoSync estiver ativado, gera o QR Code automaticamente
+                    try {
+                        const settings = await api.getControlIdSettings();
+                        if (settings && settings.autoSync) {
+                            import('./controlid.js').then(m => {
+                                m.handleGenerateQRCode(id).then(qrCode => {
+                                    // Notifica visualmente que o envio automático ocorreu
+                                    setTimeout(() => {
+                                        ui.showToast('Integração Concluída', 'Notificação com QR Code enviada automaticamente para o Hóspede e Proprietário via WhatsApp/Email.', 'qr_code_2', 'success');
+                                    }, 1500);
+                                });
+                            });
+                        }
+                    } catch (err) {
+                        console.error('Erro ao verificar autoSync do Control iD:', err);
+                    }
+
                     window.app.renderCurrentView();
                     ui.updateApprovalsBadge();
                     modals.showAlert('Reserva aprovada e confirmada com sucesso!');
@@ -1066,6 +1083,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }
 
         window.app.switchView(window.app.state.currentView);
+        window.app.renderCurrentView(); // Force explicit render after data is fully ready
         window.app.updateNavigationButtons();
         scheduleNextAutoRefresh();
 
@@ -1244,10 +1262,18 @@ document.addEventListener('DOMContentLoaded', () => {
         } else {
             // Decodifica o token para obter a função do usuário
             const decodedToken = parseJwt(token);
-            if (decodedToken) {
-                window.app.state.userRole = decodedToken.role;
-                window.app.state.currentUser = decodedToken;
+            if (!decodedToken) {
+                // Token inválido ou corrompido, limpa e redireciona para login
+                localStorage.removeItem('authToken');
+                document.getElementById('login-screen').classList.remove('hidden');
+                document.getElementById('app').classList.add('hidden');
+                document.getElementById('owner-portal').classList.add('hidden');
+                setupEventListeners(window.app);
+                return;
             }
+
+            window.app.state.userRole = decodedToken.role;
+            window.app.state.currentUser = decodedToken;
 
             // Redireciona para o portal correto
             const isAdminOrStaff = window.app.state.userRole === 'admin' || window.app.state.userRole === 'staff';
@@ -1334,7 +1360,7 @@ document.addEventListener('DOMContentLoaded', () => {
                             };
                             window.app.state.notifications.unshift(newNotification); // Adiciona no início
                             ui.renderNotifications(window.app.state.notifications);
-                            ui.showToast('Nova solicitação de reserva para aprovação!', updateData.user, 'info');
+                            ui.showToast('Aprovação Pendente', `Nova solicitação de reserva para aprovação! (Iniciado por: ${updateData.user})`, 'pending_actions', 'warning');
                             // Busca apenas as reservas para atualizar o estado e o contador
                             api.fetchInitialData().then(([guests, reservations]) => {
                                 window.app.state.reservations = reservations;
@@ -1352,7 +1378,7 @@ document.addEventListener('DOMContentLoaded', () => {
                                 default: 'Dados atualizados'
                             };
                             const message = actionMessages[updateData.action] || actionMessages.default;
-                            ui.showToast(message, updateData.user);
+                            ui.showToast('Atualização de Reserva', `${message} (Por: ${updateData.user})`, 'edit_calendar', 'info');
                             initialize(true, window.app.state.userRole);
                         }
                     }
@@ -1381,7 +1407,7 @@ document.addEventListener('DOMContentLoaded', () => {
                             // Adiciona o motivo se ele existir
                             if (notificationData.reason) message += ` Motivo: "${notificationData.reason.replace('Recusado: ', '')}"`;
                         }
-                        ui.showToast(message, 'Sistema', 'success');
+                        ui.showToast('Sucesso do Sistema', message, 'check_circle', 'success');
                         initialize(true, window.app.state.userRole); // Recarrega os dados para atualizar o calendário do proprietário
                     }
                 });

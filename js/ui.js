@@ -1,5 +1,55 @@
 import { apartments, statusConfig, paymentStatusConfig, holidays } from './config.js';
 
+// ==========================================
+// TOAST NOTIFICATIONS
+// ==========================================
+export function showToast(title, message, icon = 'info', type = 'primary') {
+    const container = document.getElementById('toast-container');
+    if (!container) return;
+
+    const toastId = 'toast-' + Date.now() + Math.random().toString(36).substring(7);
+    
+    // Configura cores baseado no tipo
+    const typeConfig = {
+        'primary': 'text-primary bg-primary/10 border-primary/20',
+        'success': 'text-green-500 bg-green-500/10 border-green-500/20',
+        'error': 'text-red-500 bg-red-500/10 border-red-500/20',
+        'warning': 'text-yellow-500 bg-yellow-500/10 border-yellow-500/20',
+        'info': 'text-blue-500 bg-blue-500/10 border-blue-500/20',
+    };
+    
+    const colorClasses = typeConfig[type] || typeConfig['info'];
+
+    const toastHTML = `
+        <div id="${toastId}" class="toast-enter glass-card rounded-2xl p-4 flex items-start gap-4 shadow-[0_8px_30px_rgb(0,0,0,0.3)] min-w-[300px] max-w-sm pointer-events-auto border-l-4 ${colorClasses.split(' ')[0].replace('text-', 'border-l-')}">
+            <div class="flex-shrink-0 mt-1">
+                <div class="w-8 h-8 rounded-full flex items-center justify-center ${colorClasses}">
+                    <span class="material-symbols-outlined text-[18px]">${icon}</span>
+                </div>
+            </div>
+            <div class="flex-1 min-w-0 pt-1">
+                <h4 class="text-sm font-bold text-on-surface truncate">${title}</h4>
+                <p class="text-xs text-on-surface-variant mt-0.5 line-clamp-2">${message}</p>
+            </div>
+            <button onclick="document.getElementById('${toastId}').classList.replace('toast-enter', 'toast-exit'); setTimeout(() => document.getElementById('${toastId}').remove(), 300)" class="flex-shrink-0 text-outline-variant hover:text-on-surface transition-colors p-1">
+                <span class="material-symbols-outlined text-[18px]">close</span>
+            </button>
+        </div>
+    `;
+
+    container.insertAdjacentHTML('beforeend', toastHTML);
+
+    // Auto remove after 5 seconds
+    setTimeout(() => {
+        const el = document.getElementById(toastId);
+        if (el) {
+            el.classList.replace('toast-enter', 'toast-exit');
+            setTimeout(() => el.remove(), 300);
+        }
+    }, 5000);
+}
+
+
 /**
  * Aplica o tema (claro/escuro/liquid-glass) na aplicação.
  * @param {string} theme - 'light' ou 'dark'.
@@ -122,47 +172,6 @@ export function updateApprovalsBadge() {
     });
 }
 
-/**
- * Exibe uma notificação toast na tela.
- * @param {string} message - A mensagem principal da notificação.
- * @param {string} user - O usuário que realizou a ação.
- * @param {string} type - O tipo de notificação ('info', 'success', 'error').
- */
-export function showToast(message, user, type = 'info') {
-    const container = document.getElementById('toast-container');
-    if (!container) return;
-
-    const toast = document.createElement('div');
-    toast.className = 'toast toast-enter card p-4 flex items-start gap-3 shadow-lg';
-
-    const iconMap = {
-        info: 'info',
-        success: 'check-circle',
-        error: 'alert-circle'
-    };
-
-    toast.innerHTML = `
-        <div>
-            <i data-lucide="${iconMap[type]}" class="w-5 h-5 text-blue-500"></i>
-        </div>
-        <div class="flex-1">
-            <p class="font-semibold">${message}</p>
-            <p class="text-sm text-outline">Realizado por: ${user}</p>
-        </div>
-    `;
-
-    container.appendChild(toast);
-    window.lucide.createIcons();
-
-    // Animação de entrada
-    setTimeout(() => toast.classList.replace('toast-enter', 'toast-enter-to'), 10);
-
-    // Animação de saída e remoção
-    setTimeout(() => {
-        toast.classList.replace('toast-enter-to', 'toast-leave-to');
-        toast.addEventListener('transitionend', () => toast.remove());
-    }, 5000); // A notificação some após 5 segundos
-}
 
 /**
  * Verifica se uma reserva está ativa em uma data específica.
@@ -529,6 +538,10 @@ export function renderActiveReservations(reservations, guests) {
             tabTasks.classList.add('active');
             reservationsTabContent.classList.add('hidden');
             tasksTabContent.classList.remove('hidden');
+            // Chama o renderTasks com os dados atualizados do estado da app
+            if (window.app && window.app.state && window.app.state.tasks) {
+                renderTasks(window.app.state.tasks);
+            }
         } else {
             tabTasks.classList.remove('active');
             tabReservations.classList.add('active');
@@ -844,6 +857,74 @@ export function renderFinancialView(reservations, guests, expenses, currentDate)
         </div>
     `;
 
+    summaryContainer.innerHTML = `
+        <div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-6">
+            ${statCard('Lucro Líquido', netProfit, 'dollar-sign', { bg: 'bg-blue-500/10', text: 'text-blue-500' })}
+            ${statCard('Receita Recebida', monthlyPaid, 'trending-up', { bg: 'bg-green-500/10', text: 'text-green-500' })}
+            ${statCard('A Receber', monthlyReceivable, 'clock', { bg: 'bg-yellow-500/10', text: 'text-yellow-500' })}
+            ${statCard('Despesas', totalExpenses, 'trending-down', { bg: 'bg-red-500/10', text: 'text-red-500' })}
+        </div>
+        <div class="card p-6 mb-6">
+            <h3 class="text-lg font-semibold mb-4">Análise de Receitas x Despesas</h3>
+            <div class="relative h-64 w-full">
+                <canvas id="financial-overview-chart"></canvas>
+            </div>
+        </div>
+    `;
+
+    // Renderiza o gráfico
+    setTimeout(() => {
+        const ctx = document.getElementById('financial-overview-chart');
+        if (ctx) {
+            // Destroi gráfico anterior se existir
+            if (window.financialChart) window.financialChart.destroy();
+            
+            const isDark = document.documentElement.classList.contains('dark') || document.body.style.backgroundColor === 'rgb(15, 15, 17)';
+            const gridColor = isDark ? 'rgba(255, 255, 255, 0.05)' : 'rgba(0, 0, 0, 0.05)';
+            const textColor = isDark ? 'rgba(255, 255, 255, 0.5)' : 'rgba(0, 0, 0, 0.5)';
+
+            window.financialChart = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: ['Recebida', 'A Receber', 'Despesas', 'Lucro Líquido'],
+                    datasets: [{
+                        label: 'Valor (R$)',
+                        data: [monthlyPaid, monthlyReceivable, totalExpenses, netProfit],
+                        backgroundColor: [
+                            'rgba(34, 197, 94, 0.8)', // Green
+                            'rgba(234, 179, 8, 0.8)', // Yellow
+                            'rgba(239, 68, 68, 0.8)', // Red
+                            'rgba(59, 130, 246, 0.8)'  // Blue
+                        ],
+                        borderRadius: 8,
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { display: false },
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    return context.raw.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+                                }
+                            }
+                        }
+                    },
+                    scales: {
+                        y: { 
+                            beginAtZero: true, 
+                            grid: { color: gridColor }, 
+                            ticks: { color: textColor, callback: (value) => 'R$ ' + value }
+                        },
+                        x: { grid: { display: false }, ticks: { color: textColor } }
+                    }
+                }
+            });
+        }
+    }, 100);
+
     const reservationsTableHtml = `
         <div class="overflow-x-auto">
             <table class="w-full text-sm text-left">
@@ -993,16 +1074,18 @@ export function renderUpcomingEvents(reservations, guests) {
         }
 
         return `
-            <div class="glass-card rounded-2xl p-4 flex items-center gap-4 cursor-pointer hover:bg-surface-container-highest transition-all duration-300" onclick="${onClick}">
-                <div class="w-10 h-10 rounded-full bg-surface-container-highest flex items-center justify-center flex-shrink-0">
-                    <i data-lucide="${icon}" class="w-5 h-5 ${color}"></i>
+            <div class="glass-card hover-3d rounded-2xl p-4 flex items-center gap-4 cursor-pointer transition-all duration-300 group border-white/5 hover:border-white/20" onclick="${onClick}">
+                <div class="w-12 h-12 rounded-xl bg-white/5 flex items-center justify-center flex-shrink-0 transition-colors group-hover:bg-white/10">
+                    <i data-lucide="${icon}" class="w-6 h-6 ${color}"></i>
                 </div>
                 <div class="flex-1 min-w-0">
-                    <h4 class="font-bold text-on-surface truncate">${text}</h4>
-                    <p class="text-xs text-on-surface-variant">${subtext}</p>
+                    <h4 class="font-bold text-on-surface truncate group-hover:text-primary transition-colors">${text}</h4>
+                    <p class="text-xs text-on-surface-variant font-medium opacity-70">${subtext}</p>
                 </div>
                 <div class="flex flex-col items-end gap-1 flex-shrink-0">
-                    <span class="text-xs font-bold text-outline">${time || '--:--'}</span>
+                    <div class="px-2 py-1 rounded-lg bg-surface-container-highest/30">
+                        <span class="text-xs font-black text-on-surface tracking-wider">${time || '--:--'}</span>
+                    </div>
                 </div>
             </div>
         `;
@@ -1522,7 +1605,12 @@ function renderMobileCalendarView(reservations, guests) {
     }
 
     if (html.trim() === '') {
-        html = `<div class="card m-2 p-8 text-center text-outline">Nenhuma reserva ativa ou futura para exibir.</div>`;
+        html = `
+            <div class="flex flex-col items-center justify-center p-12 opacity-40">
+                <span class="material-symbols-outlined text-6xl mb-4">event_busy</span>
+                <p class="text-outline text-center font-medium">Nenhum evento próximo para hoje ou amanhã.</p>
+            </div>
+        `;
     }
 
     mobileContainer.innerHTML = html;
@@ -1610,13 +1698,14 @@ export function renderCalendar(currentDate, selectedDate, firstReservationDate, 
     // Rola para a data de hoje ou para a data selecionada
     const scrollContainer = calendarContainer.closest('.table-responsive');
     if (scrollContainer) {
-        const targetHeader = calendarContainer.querySelector('.today-header') || calendarContainer.querySelector('.selected-header');
-        if (targetHeader) {
-            const scrollContainerRect = scrollContainer.getBoundingClientRect();
-            const targetHeaderRect = targetHeader.getBoundingClientRect();
-            const scrollLeft = targetHeader.offsetLeft - scrollContainer.offsetLeft - (scrollContainerRect.width / 2) + (targetHeaderRect.width / 2);
-            scrollContainer.scrollTo({ left: scrollLeft, behavior: 'smooth' });
-        }
+        // Delay para garantir que o layout foi processado
+        setTimeout(() => {
+            const targetHeader = calendarContainer.querySelector('.today-header') || calendarContainer.querySelector('.selected-header');
+            if (targetHeader) {
+                const scrollLeft = targetHeader.offsetLeft - (scrollContainer.clientWidth / 2) + (targetHeader.clientWidth / 2);
+                scrollContainer.scrollLeft = scrollLeft;
+            }
+        }, 100);
     }
 
     // Adiciona evento de clique nos cabeçalhos dos dias
@@ -1659,6 +1748,9 @@ function renderReservationBars(currentDate, reservations, guests) {
             const checkin = new Date(res.checkin + 'T00:00:00');
             const checkout = new Date(res.checkout + 'T00:00:00');
 
+            // Validação de data: Se as datas forem inválidas, não renderiza a barra
+            if (isNaN(checkin.getTime()) || isNaN(checkout.getTime())) return;
+
             // Ignora reservas fora do mês atual
             if (checkout <= new Date(year, month, 1) || checkin >= new Date(year, month + 1, 1)) return;
 
@@ -1694,29 +1786,52 @@ function renderReservationBars(currentDate, reservations, guests) {
             const cellHeight = startCell.offsetHeight;
 
             const barWidth = cellWidth * durationInDays;
-            const leftOffset = 0;
+            // Para reservas de hóspedes, a barra começa no meio da célula (check-in à tarde)
+            // e termina no meio da célula (check-out pela manhã)
+            let leftOffset = 0;
+            let finalWidth = barWidth;
+            
+            if (res.guestId !== 'TASK') {
+                leftOffset = cellWidth / 2;
+                // Se a reserva começa e termina no mesmo mês, a largura se mantém.
+                // Mas se for cortada pelo início/fim do mês, ajustamos.
+                if (checkin.getMonth() !== month) {
+                    leftOffset = 0;
+                    finalWidth -= cellWidth / 2;
+                }
+                if (checkout.getMonth() !== month) {
+                    finalWidth -= cellWidth / 2;
+                }
+            }
 
             // Aplica as classes para a divisão diagonal
             if (res.guestId !== 'TASK') {
+                const getStatusColorVar = (colorClass) => {
+                    if (colorClass.includes('green')) return 'var(--brand-green)';
+                    if (colorClass.includes('blue')) return 'var(--brand-blue)';
+                    if (colorClass.includes('yellow')) return 'var(--brand-yellow)';
+                    if (colorClass.includes('orange')) return 'var(--brand-orange)';
+                    if (colorClass.includes('red')) return 'var(--brand-red)';
+                    if (colorClass.includes('purple')) return 'var(--brand-purple)';
+                    if (colorClass.includes('slate')) return 'var(--brand-slate)';
+                    return 'var(--brand-blue)'; // Default
+                };
+
                 const checkinDateStr = res.checkin;
                 const checkoutDateStr = res.checkout;
                 const status = statusConfig[res.status];
+                const statusColor = getStatusColorVar(status.color);
 
-                const checkinCell = container.querySelector(`td[data-date='${checkinDateStr}'][data-apartment='${apt}']`);
+                const checkinCell = container.querySelector(`td[data-date='${res.checkin}'][data-apartment='${apt}']`);
                 if (checkinCell) {
                     checkinCell.classList.add('is-checkin-day');
-                    checkinCell.style.setProperty('--checkin-color', status.color.replace('bg-', 'var(--brand-') + ')');
+                    checkinCell.style.setProperty('--checkin-color', statusColor);
                 }
 
-                const checkoutCell = container.querySelector(`td[data-date='${checkoutDateStr}'][data-apartment='${apt}']`);
+                const checkoutCell = container.querySelector(`td[data-date='${res.checkout}'][data-apartment='${apt}']`);
                 if (checkoutCell) {
-                    // Encontra a reserva que está saindo para usar a cor correta
-                    const checkoutRes = activeReservations.find(r => r.checkout === checkoutDateStr && r.apartment === apt && r.guestId !== 'TASK');
-                    if (checkoutRes) {
-                        const checkoutStatus = statusConfig[checkoutRes.status];
-                        checkoutCell.classList.add('is-checkout-day');
-                        checkoutCell.style.setProperty('--checkout-color', checkoutStatus.color.replace('bg-', 'var(--brand-') + ')');
-                    }
+                    checkoutCell.classList.add('is-checkout-day');
+                    checkoutCell.style.setProperty('--checkout-color', statusColor);
                 }
             }
 
@@ -1785,7 +1900,7 @@ function renderReservationBars(currentDate, reservations, guests) {
             wrapper.style.top = `${topPosition + (level * (cellHeight + 2)) + 2}px`; // Adiciona espaçamento vertical para sobreposições
             wrapper.style.left = `${leftPosition + leftOffset + 2}px`; // Adiciona offset para check-ins divididos
             wrapper.style.height = `${cellHeight - 4}px`;
-            wrapper.style.width = `${barWidth - 4}px`;
+            wrapper.style.width = `${finalWidth - 4}px`;
             wrapper.style.zIndex = 10 + level;
 
             const bar = document.createElement('div');

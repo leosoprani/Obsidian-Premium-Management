@@ -2,3 +2,6 @@ node_modules
 .expo/
 dist/
 *.log
+.env
+compass-connections.json
+dados_hospedagem*.json
